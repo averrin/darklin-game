@@ -6,14 +6,17 @@ import (
 	"fmt"
 )
 
-type GlobalStream struct {
+// Stream for global events
+type Stream struct {
 	actor.Actor
 }
 
-func (actor GlobalStream) Live() {
+
+// Live method for dispatch events
+func (a Stream) Live() {
 	for {
-		event := <-actor.Stream
-		for _, s := range actor.Subscriptions {
+		event := <- a.Stream
+		for _, s := range a.Subscriptions {
 			if event.Type == s.Type {
 				go s.Subscriber.ConsumeEvent(event)
 			}
