@@ -30,26 +30,28 @@ type Subscription struct {
 // Actor - basic event-driven class
 type Actor struct {
 	Stream        chan events.Event
-	GlobalStream  chan events.Event
 	Subscriptions []Subscription
+	Streams       map[string]chan events.Event
 }
 
 // NewActor construct new Actor
 func NewActor(gs chan events.Event) *Actor {
 	actor := new(Actor)
-	actor.GlobalStream = gs
+	actor.Streams = make(map[string]chan events.Event)
+	actor.Streams["global"] = gs
 	actor.Stream = make(chan events.Event)
 	return actor
 }
 
 // SendEvent with type and payload
-func (a Actor) SendEvent(eventType events.EventType, payload interface{}) {
+func (a Actor) SendEvent(reciever string, eventType events.EventType, payload interface{}) {
 	event := events.Event{
 		time.Now(),
 		eventType,
 		payload,
 	}
-	a.GlobalStream <- event
+	stream := a.Streams[reciever]
+	stream <- event
 }
 
 // Subscribe on events

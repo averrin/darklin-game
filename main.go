@@ -4,9 +4,12 @@ import (
 	"actor"
 	"events"
 	"global"
-	// "time"
+	"log"
+	"player"
+	"time"
 	"time_stream"
-	// "fmt"
+
+	"gopkg.in/readline.v1"
 )
 
 // TestActor just someone who do something
@@ -21,38 +24,63 @@ func (a TestActor) ConsumeEvent(event events.Event) {
 
 // NewTestActor because i, sucj in golang yet
 func NewTestActor(gs chan events.Event) *TestActor {
+	a := actor.NewActor(gs)
 	actor := new(TestActor)
-	actor.GlobalStream = gs
-	actor.Stream = make(chan events.Event)
+	actor.Actor = *a
 	return actor
 }
 
 // Live - i need print something
 func (a TestActor) Live() {
 	for {
-		event := <- a.Stream
+		event := <-a.Stream
 		for _, s := range a.Subscriptions {
 			if event.Type == s.Type {
 				go s.Subscriber.ConsumeEvent(event)
 			}
 		}
-		if event.Timestamp.Second() % 2 == 0 {
-			a.SendEvent(events.MESSAGE, "even Tick")
+		switch event.Type {
+		case events.SECOND:
+			a.SendEvent("global", events.MESSAGE, "Every second, boss")
+		case events.MINUTE:
+			a.SendEvent("global", events.MESSAGE, "Every minute, boss")
 		}
 	}
 }
 
 func main() {
-	stream := make(chan events.Event)
-	ts := time_stream.TimeStream{}
-	ts.GlobalStream = stream
+	gs := global.NewStream()
+	stream := gs.Stream
+	ts := time_stream.NewStream(stream)
 	go ts.Live()
 
 	testActor := NewTestActor(stream)
 	go testActor.Live()
 
-	gs := global.Stream{}
-	gs.Stream = stream
-	gs.Subscribe(events.TICK, testActor)
-	gs.Live()
+	gs.Subscribe(events.SECOND, testActor)
+	gs.Subscribe(events.MINUTE, testActor)
+
+	player := player.NewPlayer(stream)
+	gs.Subscribe(events.MESSAGE, player)
+	gs.Streams["player"] = player.Stream
+	gs.Streams["time"] = ts.Stream
+	go player.Live()
+
+	go gs.Live()
+	rl, err := readline.New(">> ")
+	if err != nil {
+		panic(err)
+	}
+	defer rl.Close()
+	log.SetOutput(rl.Stderr())
+
+	for {
+		line, err := rl.Readline()
+		if err != nil { // io.EOF
+			break
+		}
+		// println("<< ", line)
+		stream <- events.Event{time.Now(), events.COMMAND, line}
+	}
+
 }

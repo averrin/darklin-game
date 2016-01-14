@@ -7,8 +7,13 @@ type EventType int
 
 // EventTypes enum
 const (
-	TICK EventType = iota
+	ALL EventType = iota
+	TICK
+	SECOND
+	MINUTE
+	HOUR
 	MESSAGE
+	COMMAND
 )
 
 // Event is atom of event stream
