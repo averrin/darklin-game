@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/fatih/color"
 
 	// "golang.org/x/net/websocket"
 	"github.com/gorilla/websocket"
@@ -37,22 +39,26 @@ func NewGlobalStream() *GlobalStream {
 
 // Live method for dispatch events
 func (a GlobalStream) Live() {
+	yellow := color.New(color.FgYellow).SprintFunc()
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 	for {
 		event := <-a.Stream
 		// log.Println(event)
 		a.NotifySubscribers(event)
 		switch event.Type {
 		case MESSAGE:
-			log.Println("MESSAGE: ", event.Payload)
+			log.Println(yellow("MESSAGE:"), event.Payload)
 			a.Broadcast(MESSAGE, event.Payload, event.Sender)
 		case COMMAND:
-			log.Println("> ", event.Payload)
+			log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
 			switch event.Payload {
 			case "time":
 				a.SendEvent("time", INFO, a.Streams[event.Sender])
 			case "online":
 				log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
-				a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
+				if event.Sender != "cmd" {
+					a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
+				}
 			case "exit":
 				os.Exit(0)
 			default:
@@ -64,6 +70,7 @@ func (a GlobalStream) Live() {
 
 // CmdHandler - handle user input
 func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
+	red := color.New(color.FgRed).SprintFunc()
 	c, err := upgrader.Upgrade(w, r, nil)
 	name := uuid.New()
 	p := NewPlayer(name, a.Stream)
@@ -80,13 +87,18 @@ func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
 		_, message, err := c.ReadMessage()
 		if err != nil {
 			// log.Println("read:", err)
-			log.Println("Disconnect", name)
+			log.Println(red("Disconnect"), name)
 			delete(a.Players, c)
 			delete(a.Streams, name)
 			break
 		}
-		log.Printf("recv: %s", message)
-		a.Stream <- Event{time.Now(), COMMAND, string(message), name}
+		line := string(message)
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		log.Printf("recv: %s", line)
+		a.Stream <- Event{time.Now(), COMMAND, line, name}
 		// err = c.WriteMessage(mt, []byte("U r "+name))
 		// if err != nil {
 		// 	log.Println("write:", err)

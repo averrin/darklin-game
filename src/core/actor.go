@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+
+	"github.com/fatih/color"
 )
 
 // "fmt"
@@ -63,11 +65,12 @@ func (a Actor) SendEventWithSender(reciever string, eventType EventType, payload
 // Broadcast - send all
 func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string) {
 	event := NewEvent(eventType, payload, sender)
+	yellow := color.New(color.FgYellow).SprintFunc()
+	log.Println(yellow("Broadcast event"), event)
 	for r := range a.Streams {
 		if r == "global" || r == sender || r == "time" {
 			continue
 		}
-		log.Println("in broadcast", r, payload)
 		a.Streams[r] <- event
 	}
 }

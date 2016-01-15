@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
 
@@ -20,7 +21,8 @@ func (a Player) ConsumeEvent(event Event) {
 
 // NewPlayer because i, sucj in golang yet
 func NewPlayer(name string, gs chan Event) *Player {
-	log.Println("New player: ", name)
+	green := color.New(color.FgGreen).SprintFunc()
+	log.Println("New player: ", green(name))
 	a := NewActor(name, gs)
 	actor := new(Player)
 	actor.Actor = *a
@@ -29,7 +31,7 @@ func NewPlayer(name string, gs chan Event) *Player {
 
 // Live - i need print something
 func (a Player) Live() {
-	log.Println("Player", a.Name, "Live")
+	// log.Println("Player", a.Name, "Live")
 	for {
 		event := <-a.Stream
 		a.NotifySubscribers(event)

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/gorilla/websocket"
 
@@ -15,6 +16,7 @@ func main() {
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("time"),
 		readline.PcItem("exit"),
+		readline.PcItem("online"),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",
@@ -57,6 +59,7 @@ func main() {
 		if err != nil { // io.EOF
 			break
 		}
+		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
