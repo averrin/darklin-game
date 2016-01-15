@@ -46,7 +46,7 @@ func main() {
 	testActor := NewTestActor(stream)
 	go testActor.Live()
 
-	gs.Subscribe(SECOND, testActor)
+	// gs.Subscribe(SECOND, testActor)
 	gs.Subscribe(MINUTE, testActor)
 
 	gs.Streams["time"] = ts.Stream
