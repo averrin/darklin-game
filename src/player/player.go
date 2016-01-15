@@ -3,6 +3,7 @@ package player
 import (
 	"actor"
 	"events"
+	"fmt"
 	"log"
 )
 
@@ -18,7 +19,7 @@ func (a Player) ConsumeEvent(event events.Event) {
 
 // NewTestActor because i, sucj in golang yet
 func NewPlayer(gs chan events.Event) *Player {
-	a := actor.NewActor(gs)
+	a := actor.NewActor("player", gs)
 	actor := new(Player)
 	actor.Actor = *a
 	return actor
@@ -28,11 +29,7 @@ func NewPlayer(gs chan events.Event) *Player {
 func (a Player) Live() {
 	for {
 		event := <-a.Stream
-		for _, s := range a.Subscriptions {
-			if event.Type == s.Type || s.Type == events.ALL {
-				go s.Subscriber.ConsumeEvent(event)
-			}
-		}
-		log.Println(event.Payload)
+		a.NotifySubscribers(event)
+		log.Println(fmt.Sprintf("%v: %v", event.Sender, event.Payload))
 	}
 }

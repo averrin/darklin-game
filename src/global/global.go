@@ -4,6 +4,7 @@ import (
 	"actor"
 	"events"
 	"log"
+	"os"
 )
 
 // Stream for global events
@@ -13,7 +14,7 @@ type Stream struct {
 
 func NewStream() *Stream {
 	gs := make(chan events.Event)
-	a := actor.NewActor(gs)
+	a := actor.NewActor("global", gs)
 	actor := new(Stream)
 	actor.Actor = *a
 	return actor
@@ -24,20 +25,18 @@ func (a Stream) Live() {
 	for {
 		event := <-a.Stream
 		// log.Println(event)
-		for _, s := range a.Subscriptions {
-			if event.Type == s.Type || s.Type == events.ALL {
-				go s.Subscriber.ConsumeEvent(event)
-			}
-		}
+		a.NotifySubscribers(event)
 		switch event.Type {
 		case events.MESSAGE:
-			a.SendEvent("player", events.MESSAGE, event.Payload)
+			a.ForwardEvent("player", event)
 		// 	log.Println("MESSAGE: ", event.Payload)
 		case events.COMMAND:
 			log.Println("USER COMMAND: ", event.Payload)
 			switch event.Payload {
 			case "time":
 				a.SendEvent("time", events.INFO, a.Streams["player"])
+			case "exit":
+				os.Exit(0)
 			}
 		}
 	}
