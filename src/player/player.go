@@ -5,11 +5,14 @@ import (
 	"events"
 	"fmt"
 	"log"
+
+	"github.com/gorilla/websocket"
 )
 
-// TestActor just someone who do something
+// Player just someone who do something
 type Player struct {
 	actor.Actor
+	Connection *websocket.Conn
 }
 
 // ConsumeEvent of couse
@@ -17,9 +20,10 @@ func (a Player) ConsumeEvent(event events.Event) {
 	a.Stream <- event
 }
 
-// NewTestActor because i, sucj in golang yet
-func NewPlayer(gs chan events.Event) *Player {
-	a := actor.NewActor("player", gs)
+// NewPlayer because i, sucj in golang yet
+func NewPlayer(name string, gs chan events.Event) *Player {
+	log.Println("New player: ", name)
+	a := actor.NewActor(name, gs)
 	actor := new(Player)
 	actor.Actor = *a
 	return actor
@@ -27,9 +31,14 @@ func NewPlayer(gs chan events.Event) *Player {
 
 // Live - i need print something
 func (a Player) Live() {
+	log.Println("Player", a.Name, "Live")
 	for {
 		event := <-a.Stream
+		log.Println(event)
 		a.NotifySubscribers(event)
-		log.Println(fmt.Sprintf("%v: %v", event.Sender, event.Payload))
+		msg := fmt.Sprintf("%v: %v", event.Sender, event.Payload)
+		log.Println(msg)
+		err := a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+		log.Println(err)
 	}
 }

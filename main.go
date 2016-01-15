@@ -5,7 +5,7 @@ import (
 	"events"
 	"global"
 	"log"
-	"player"
+	"net/http"
 	"time"
 	"time_stream"
 
@@ -56,13 +56,14 @@ func main() {
 	// gs.Subscribe(events.SECOND, testActor)
 	gs.Subscribe(events.MINUTE, testActor)
 
-	player := player.NewPlayer(stream)
-	// gs.Subscribe(events.MESSAGE, player)
-	gs.Streams["player"] = player.Stream
 	gs.Streams["time"] = ts.Stream
-	go player.Live()
 
+	http.HandleFunc("/ws", gs.CmdHandler)
+	log.Println("Serving")
+	// http.Handle("/", http.FileServer(http.Dir(".")))
+	go http.ListenAndServe(":8089", nil)
 	go gs.Live()
+
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("time"),
 		readline.PcItem("exit"),
@@ -82,10 +83,13 @@ func main() {
 	for {
 		line, err := rl.Readline()
 		if err != nil { // io.EOF
+			log.Fatal(err)
 			break
 		}
-		// println("<< ", line)
-		stream <- events.Event{time.Now(), events.COMMAND, line, "player"}
+		if line == "" {
+			continue
+		}
+		println("<< ", line)
+		stream <- events.Event{time.Now(), events.COMMAND, line, "cmd"}
 	}
-
 }
