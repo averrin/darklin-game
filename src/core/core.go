@@ -57,7 +57,7 @@ func main() {
 	http.HandleFunc("/ws", gs.CmdHandler)
 	log.Println("Serving")
 	// http.Handle("/", http.FileServer(http.Dir(".")))
-	go http.ListenAndServe(":8089", nil)
+	go http.ListenAndServe(":80", nil)
 	go gs.Live()
 
 	var completer = readline.NewPrefixCompleter(
