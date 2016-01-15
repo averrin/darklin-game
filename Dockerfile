@@ -3,6 +3,6 @@ FROM ubuntu
 EXPOSE 80
 WORKDIR /app
 # copy binary into image
-COPY echo /app/
+COPY core /app/
 #COPY .env /app/
-#ENTRYPOINT ["./echo"]
+#ENTRYPOINT ["./core"]

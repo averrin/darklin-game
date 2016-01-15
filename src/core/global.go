@@ -39,8 +39,8 @@ func (a GlobalStream) Live() {
 		a.NotifySubscribers(event)
 		switch event.Type {
 		case MESSAGE:
-			a.ForwardEvent("player", event)
-		// 	log.Println("MESSAGE: ", event.Payload)
+			log.Println("MESSAGE: ", event.Payload)
+			a.Broadcast(MESSAGE, event.Payload, event.Sender)
 		case COMMAND:
 			log.Println("> ", event.Payload)
 			switch event.Payload {
