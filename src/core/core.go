@@ -1,30 +1,26 @@
 package main
 
 import (
-	"actor"
-	"events"
-	"global"
 	"log"
 	"net/http"
 	"time"
-	"time_stream"
 
 	"gopkg.in/readline.v1"
 )
 
 // TestActor just someone who do something
 type TestActor struct {
-	actor.Actor
+	Actor
 }
 
 // ConsumeEvent of couse
-func (a TestActor) ConsumeEvent(event events.Event) {
+func (a TestActor) ConsumeEvent(event Event) {
 	a.Stream <- event
 }
 
 // NewTestActor because i, sucj in golang yet
-func NewTestActor(gs chan events.Event) *TestActor {
-	a := actor.NewActor("announcer", gs)
+func NewTestActor(gs chan Event) *TestActor {
+	a := NewActor("announcer", gs)
 	actor := new(TestActor)
 	actor.Actor = *a
 	return actor
@@ -36,25 +32,25 @@ func (a TestActor) Live() {
 		event := <-a.Stream
 		a.NotifySubscribers(event)
 		switch event.Type {
-		case events.SECOND:
-			a.SendEvent("global", events.MESSAGE, "Every second, mister")
-		case events.MINUTE:
-			a.SendEvent("global", events.MESSAGE, "Every minute, boss")
+		case SECOND:
+			a.SendEvent("global", MESSAGE, "Every second, mister")
+		case MINUTE:
+			a.SendEvent("global", MESSAGE, "Every minute, boss")
 		}
 	}
 }
 
 func main() {
-	gs := global.NewStream()
+	gs := NewGlobalStream()
 	stream := gs.Stream
-	ts := time_stream.NewStream(stream)
+	ts := NewTimeStream(stream)
 	go ts.Live()
 
 	testActor := NewTestActor(stream)
 	go testActor.Live()
 
-	// gs.Subscribe(events.SECOND, testActor)
-	gs.Subscribe(events.MINUTE, testActor)
+	// gs.Subscribe(SECOND, testActor)
+	gs.Subscribe(MINUTE, testActor)
 
 	gs.Streams["time"] = ts.Stream
 
@@ -90,6 +86,6 @@ func main() {
 			continue
 		}
 		println("<< ", line)
-		stream <- events.Event{time.Now(), events.COMMAND, line, "cmd"}
+		stream <- Event{time.Now(), COMMAND, line, "cmd"}
 	}
 }

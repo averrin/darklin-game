@@ -1,8 +1,6 @@
-package player
+package main
 
 import (
-	"actor"
-	"events"
 	"fmt"
 	"log"
 
@@ -11,19 +9,19 @@ import (
 
 // Player just someone who do something
 type Player struct {
-	actor.Actor
+	Actor
 	Connection *websocket.Conn
 }
 
 // ConsumeEvent of couse
-func (a Player) ConsumeEvent(event events.Event) {
+func (a Player) ConsumeEvent(event Event) {
 	a.Stream <- event
 }
 
 // NewPlayer because i, sucj in golang yet
-func NewPlayer(name string, gs chan events.Event) *Player {
+func NewPlayer(name string, gs chan Event) *Player {
 	log.Println("New player: ", name)
-	a := actor.NewActor(name, gs)
+	a := NewActor(name, gs)
 	actor := new(Player)
 	actor.Actor = *a
 	return actor
@@ -34,11 +32,8 @@ func (a Player) Live() {
 	log.Println("Player", a.Name, "Live")
 	for {
 		event := <-a.Stream
-		// log.Println(event)
 		a.NotifySubscribers(event)
 		msg := fmt.Sprintf("%v: %v", event.Sender, event.Payload)
-		// log.Println(msg)
 		_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
-		// log.Println(err)
 	}
 }

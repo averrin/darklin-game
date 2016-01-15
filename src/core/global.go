@@ -1,13 +1,10 @@
-package global
+package main
 
 import (
-	"actor"
-	"events"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"player"
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -18,53 +15,54 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
-// Stream for global events
-type Stream struct {
-	actor.Actor
-	Players map[*websocket.Conn]player.Player
+// GlobalStream for global events
+type GlobalStream struct {
+	Actor
+	Players map[*websocket.Conn]Player
 }
 
-// NewStream constructor
-func NewStream() *Stream {
-	gs := make(chan events.Event)
-	a := actor.NewActor("global", gs)
-	actor := new(Stream)
+// NewGlobalStream constructor
+func NewGlobalStream() *GlobalStream {
+	gs := make(chan Event)
+	a := NewActor("global", gs)
+	actor := new(GlobalStream)
 	actor.Actor = *a
-	actor.Players = make(map[*websocket.Conn]player.Player)
+	actor.Players = make(map[*websocket.Conn]Player)
 	return actor
 }
 
 // Live method for dispatch events
-func (a Stream) Live() {
+func (a GlobalStream) Live() {
 	for {
 		event := <-a.Stream
 		// log.Println(event)
 		a.NotifySubscribers(event)
 		switch event.Type {
-		case events.MESSAGE:
+		case MESSAGE:
 			a.ForwardEvent("player", event)
 		// 	log.Println("MESSAGE: ", event.Payload)
-		case events.COMMAND:
+		case COMMAND:
 			log.Println("> ", event.Payload)
 			switch event.Payload {
 			case "time":
-				a.SendEvent("time", events.INFO, a.Streams[event.Sender])
+				a.SendEvent("time", INFO, a.Streams[event.Sender])
 			case "online":
-				a.SendEvent(event.Sender, events.MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
+				log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
+				a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
 			case "exit":
 				os.Exit(0)
 			default:
-				a.Broadcast(events.MESSAGE, event.Payload, event.Sender)
+				a.Broadcast(MESSAGE, event.Payload, event.Sender)
 			}
 		}
 	}
 }
 
 // CmdHandler - handle user input
-func (a Stream) CmdHandler(w http.ResponseWriter, r *http.Request) {
+func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
 	name := uuid.New()
-	p := player.NewPlayer(name, a.Stream)
+	p := NewPlayer(name, a.Stream)
 	p.Connection = c
 	go p.Live()
 	a.Players[c] = *p
@@ -84,7 +82,7 @@ func (a Stream) CmdHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		log.Printf("recv: %s", message)
-		a.Stream <- events.Event{time.Now(), events.COMMAND, string(message), name}
+		a.Stream <- Event{time.Now(), COMMAND, string(message), name}
 		// err = c.WriteMessage(mt, []byte("U r "+name))
 		// if err != nil {
 		// 	log.Println("write:", err)
