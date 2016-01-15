@@ -8,6 +8,7 @@ import (
 	// "fmt"
 )
 
+// Stream
 type Stream struct {
 	actor.Actor
 }

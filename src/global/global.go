@@ -45,7 +45,7 @@ func (a Stream) Live() {
 			a.ForwardEvent("player", event)
 		// 	log.Println("MESSAGE: ", event.Payload)
 		case events.COMMAND:
-			log.Println("USER COMMAND: ", event.Payload)
+			log.Println("> ", event.Payload)
 			switch event.Payload {
 			case "time":
 				a.SendEvent("time", events.INFO, a.Streams[event.Sender])
@@ -53,6 +53,8 @@ func (a Stream) Live() {
 				a.SendEvent(event.Sender, events.MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
 			case "exit":
 				os.Exit(0)
+			default:
+				a.Broadcast(events.MESSAGE, event.Payload, event.Sender)
 			}
 		}
 	}
@@ -73,19 +75,20 @@ func (a Stream) CmdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 	for {
-		mt, message, err := c.ReadMessage()
+		_, message, err := c.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
+			// log.Println("read:", err)
+			log.Println("Disconnect", name)
 			delete(a.Players, c)
 			delete(a.Streams, name)
 			break
 		}
 		log.Printf("recv: %s", message)
 		a.Stream <- events.Event{time.Now(), events.COMMAND, string(message), name}
-		err = c.WriteMessage(mt, []byte("U r "+name))
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
+		// err = c.WriteMessage(mt, []byte("U r "+name))
+		// if err != nil {
+		// 	log.Println("write:", err)
+		// 	break
+		// }
 	}
 }

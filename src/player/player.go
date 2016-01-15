@@ -34,11 +34,11 @@ func (a Player) Live() {
 	log.Println("Player", a.Name, "Live")
 	for {
 		event := <-a.Stream
-		log.Println(event)
+		// log.Println(event)
 		a.NotifySubscribers(event)
 		msg := fmt.Sprintf("%v: %v", event.Sender, event.Payload)
-		log.Println(msg)
-		err := a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
-		log.Println(err)
+		// log.Println(msg)
+		_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+		// log.Println(err)
 	}
 }

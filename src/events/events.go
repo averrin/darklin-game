@@ -24,3 +24,13 @@ type Event struct {
 	Payload   interface{}
 	Sender    string
 }
+
+// NewEvent constructor
+func NewEvent(eventType EventType, payload interface{}, sender string) Event {
+	event := new(Event)
+	event.Timestamp = time.Now()
+	event.Type = eventType
+	event.Payload = payload
+	event.Sender = sender
+	return *event
+}

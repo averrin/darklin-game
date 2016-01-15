@@ -28,7 +28,7 @@ func main() {
 	log.SetOutput(rl.Stderr())
 	log.SetPrefix("")
 
-	u := url.URL{Scheme: "ws", Host: "localhost:8089", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "core.darkl.in", Path: "/ws"}
 	log.Printf("connecting to %s", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
@@ -48,7 +48,7 @@ func main() {
 				log.Println("read:", err)
 				return
 			}
-			log.Printf("recv: %s", message)
+			log.Printf("\n%s", message)
 		}
 	}()
 
@@ -56,6 +56,9 @@ func main() {
 		line, err := rl.Readline()
 		if err != nil { // io.EOF
 			break
+		}
+		if line == "" {
+			continue
 		}
 		println("<< ", line)
 		if line == "exit" {
@@ -66,6 +69,5 @@ func main() {
 			log.Println("write:", err)
 			return
 		}
-		// stream <- events.Event{time.Now(), events.COMMAND, line, "player"}
 	}
 }

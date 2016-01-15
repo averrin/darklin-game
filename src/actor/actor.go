@@ -2,9 +2,10 @@ package actor
 
 import (
 	"events"
-	"time"
-	// "fmt"
+	"log"
 )
+
+// "fmt"
 
 // Interface - Anybody who can live
 type Interface interface {
@@ -48,14 +49,28 @@ func NewActor(name string, gs chan events.Event) *Actor {
 
 // SendEvent with type and payload
 func (a Actor) SendEvent(reciever string, eventType events.EventType, payload interface{}) {
-	event := events.Event{
-		time.Now(),
-		eventType,
-		payload,
-		a.Name,
-	}
+	event := events.NewEvent(eventType, payload, a.Name)
 	stream := a.Streams[reciever]
 	stream <- event
+}
+
+// SendEventWithSender - fake sender
+func (a Actor) SendEventWithSender(reciever string, eventType events.EventType, payload interface{}, sender string) {
+	event := events.NewEvent(eventType, payload, sender)
+	stream := a.Streams[reciever]
+	stream <- event
+}
+
+// Broadcast - send all
+func (a Actor) Broadcast(eventType events.EventType, payload interface{}, sender string) {
+	event := events.NewEvent(eventType, payload, sender)
+	for r := range a.Streams {
+		if r == "global" || r == sender || r == "time" {
+			continue
+		}
+		log.Println("in broadcast", r, payload)
+		a.Streams[r] <- event
+	}
 }
 
 // ForwardEvent to new reciever
