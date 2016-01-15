@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
 
 	"github.com/fatih/color"
@@ -35,7 +35,14 @@ func (a Player) Live() {
 	for {
 		event := <-a.Stream
 		a.NotifySubscribers(event)
-		msg := fmt.Sprintf("%v: %v", event.Sender, event.Payload)
-		_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+		switch event.Type {
+		case HEARTBEAT:
+			msg, _ := json.Marshal(event)
+			_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+		case MESSAGE:
+			// msg := fmt.Sprintf("%v: %v", event.Sender, event.Payload)
+			msg, _ := json.Marshal(event)
+			_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+		}
 	}
 }

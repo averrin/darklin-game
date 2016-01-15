@@ -46,6 +46,8 @@ func (a GlobalStream) Live() {
 		// log.Println(event)
 		a.NotifySubscribers(event)
 		switch event.Type {
+		case SECOND:
+			a.Broadcast(HEARTBEAT, event.Timestamp, "heartbeat")
 		case MESSAGE:
 			log.Println(yellow("MESSAGE:"), event.Payload)
 			a.Broadcast(MESSAGE, event.Payload, event.Sender)
@@ -62,7 +64,12 @@ func (a GlobalStream) Live() {
 			case "exit":
 				os.Exit(0)
 			default:
-				a.Broadcast(MESSAGE, event.Payload, event.Sender)
+				switch event.Payload.(type) {
+				case string:
+					if strings.HasPrefix(event.Payload.(string), "/") {
+						a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
+					}
+				}
 			}
 		}
 	}

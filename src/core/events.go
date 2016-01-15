@@ -15,6 +15,7 @@ const (
 	HOUR
 	MESSAGE
 	COMMAND
+	HEARTBEAT
 )
 
 // Event is atom of event stream

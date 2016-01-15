@@ -1,15 +1,39 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"flag"
 	"log"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 
 	"gopkg.in/readline.v1"
 )
+
+func connect(u url.URL) *websocket.Conn {
+	log.Printf("connecting to %s", u.String())
+
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		// log.Fatal("dial:", err)
+		time.Sleep(5000 * time.Millisecond)
+		return connect(u)
+	}
+	log.Println("connected")
+	return c
+}
+
+type Event struct {
+	Timestamp time.Time
+	Type      int
+	Payload   interface{}
+	Sender    string
+}
 
 func main() {
 
@@ -17,6 +41,7 @@ func main() {
 		readline.PcItem("time"),
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
+		readline.PcItem("iam"),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",
@@ -30,27 +55,35 @@ func main() {
 	log.SetOutput(rl.Stderr())
 	log.SetPrefix("")
 
-	u := url.URL{Scheme: "ws", Host: "core.darkl.in", Path: "/ws"}
-	log.Printf("connecting to %s", u.String())
-
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		log.Fatal("dial:", err)
-	}
-	defer c.Close()
+	host := flag.String("host", "core.darkl.in", "host of core")
+	flag.Parse()
+	u := url.URL{Scheme: "ws", Host: *host, Path: "/ws"}
+	conn := connect(u)
+	defer conn.Close()
 
 	done := make(chan struct{})
 
 	go func() {
-		defer c.Close()
+		defer conn.Close()
 		defer close(done)
 		for {
-			_, message, err := c.ReadMessage()
+			_, message, err := conn.ReadMessage()
 			if err != nil {
 				log.Println("read:", err)
-				return
+				log.Println("Disconnected... wait...")
+				time.Sleep(500 * time.Millisecond)
+				conn = connect(u)
+				continue
+				// return
 			}
-			log.Printf("\n%s", message)
+			var event Event
+			decoder := json.NewDecoder(bytes.NewReader(message))
+			err = decoder.Decode(&event)
+			switch event.Type {
+			case 8:
+			default:
+				log.Printf("\n%s: %v", event.Sender, event.Payload)
+			}
 		}
 	}()
 
@@ -67,7 +100,7 @@ func main() {
 		if line == "exit" {
 			os.Exit(0)
 		}
-		err = c.WriteMessage(websocket.TextMessage, []byte(line))
+		err = conn.WriteMessage(websocket.TextMessage, []byte(line))
 		if err != nil {
 			log.Println("write:", err)
 			return
