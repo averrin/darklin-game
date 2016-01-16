@@ -47,7 +47,7 @@ func (a GlobalStream) Live() {
 		a.NotifySubscribers(event)
 		switch event.Type {
 		case SECOND:
-			a.Broadcast(HEARTBEAT, event.Timestamp, "heartbeat")
+			a.Broadcast(HEARTBEAT, event.Payload, "heartbeat")
 		case MESSAGE:
 			log.Println(yellow("MESSAGE:"), event.Payload)
 			a.Broadcast(MESSAGE, event.Payload, event.Sender)
