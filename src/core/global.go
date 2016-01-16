@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/fatih/color"
 
@@ -21,10 +23,19 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// GlobalState -- info about world
+type GlobalState struct {
+	ID   bson.ObjectId `bson:"_id,omitempty"`
+	Date time.Time
+	New  bool
+}
+
 // GlobalStream for global events
 type GlobalStream struct {
 	Actor
 	Players map[*websocket.Conn]Player
+	Storage *Storage
+	State   GlobalState
 }
 
 // NewGlobalStream constructor
@@ -34,6 +45,16 @@ func NewGlobalStream() *GlobalStream {
 	actor := new(GlobalStream)
 	actor.Actor = *a
 	actor.Players = make(map[*websocket.Conn]Player)
+	actor.Storage = NewStorage()
+	db := actor.Storage.Session.Copy().DB("darklin")
+	n, _ := db.C("state").Count()
+	actor.State = *new(GlobalState)
+	actor.State.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.Local)
+	actor.State.New = true
+	if n != 0 {
+		db.C("state").Find(bson.M{}).One(&actor.State)
+		actor.State.New = false
+	}
 	return actor
 }
 
@@ -41,13 +62,26 @@ func NewGlobalStream() *GlobalStream {
 func (a GlobalStream) Live() {
 	yellow := color.New(color.FgYellow).SprintFunc()
 	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+	db := a.Storage.Session.Copy().DB("darklin")
 	for {
 		event := <-a.Stream
 		// log.Println(event)
 		a.NotifySubscribers(event)
 		switch event.Type {
 		case SECOND:
+			if a.State.New {
+				i := bson.NewObjectId()
+				go db.C("state").Insert(bson.M{"_id": i}, a.State)
+				// log.Println(err)
+				a.State.New = false
+				a.State.ID = i
+			}
 			a.Broadcast(HEARTBEAT, event.Payload, "heartbeat")
+			a.State.Date = event.Payload.(time.Time)
+			go func() {
+				_ = db.C("state").Update(bson.M{"_id": a.State.ID}, a.State)
+				// log.Println(err)
+			}()
 		case MESSAGE:
 			log.Println(yellow("MESSAGE:"), event.Payload)
 			a.Broadcast(MESSAGE, event.Payload, event.Sender)

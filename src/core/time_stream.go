@@ -13,10 +13,11 @@ type TimeStream struct {
 }
 
 // NewTimeStream constructor
-func NewTimeStream(gs chan Event) *TimeStream {
+func NewTimeStream(gs chan Event, date time.Time) *TimeStream {
 	a := NewActor("time", gs)
 	actor := new(TimeStream)
 	actor.Actor = *a
+	actor.Date = date
 	return actor
 }
 
@@ -25,7 +26,6 @@ func (a TimeStream) Live() {
 	k := 1
 	ticks := 0
 	ticker := time.NewTicker(time.Duration(100 * k * int(time.Millisecond)))
-	a.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.Local)
 	for t := range ticker.C {
 		a.Date = a.Date.Add(time.Duration(100 * k * int(time.Millisecond)))
 		go func() {

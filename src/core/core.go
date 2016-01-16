@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"gopkg.in/mgo.v2"
 )
 
 // TestActor just someone who do something
@@ -40,9 +42,17 @@ func (a TestActor) Live() {
 }
 
 func main() {
+	var err error
+	session, err = mgo.Dial("mongo")
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+	session.SetMode(mgo.Monotonic, true)
+
 	gs := NewGlobalStream()
 	stream := gs.Stream
-	ts := NewTimeStream(stream)
+	ts := NewTimeStream(stream, gs.State.Date)
 	go ts.Live()
 
 	testActor := NewTestActor(stream)
