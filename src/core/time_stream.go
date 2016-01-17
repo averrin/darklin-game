@@ -26,14 +26,16 @@ func (a TimeStream) Live() {
 	k := 1
 	ticks := 0
 	ticker := time.NewTicker(time.Duration(100 * k * int(time.Millisecond)))
-	for t := range ticker.C {
-		a.Date = a.Date.Add(time.Duration(100 * k * int(time.Millisecond)))
-		go func() {
+	go func() {
+		for {
 			event := <-a.Stream
 			if event.Type == INFO {
-				event.Payload.(chan Event) <- Event{t, MESSAGE, fmt.Sprintf("Time: %v", a.Date), "time"}
+				event.Payload.(chan Event) <- Event{time.Now(), MESSAGE, fmt.Sprintf("Time: %v", a.Date), "time"}
 			}
-		}()
+		}
+	}()
+	for t := range ticker.C {
+		a.Date = a.Date.Add(time.Duration(100 * k * int(time.Millisecond)))
 		a.SendEvent("global", TICK, a.Date)
 		// log.Println(ticks, ticks%10)
 		if ticks > 0 && ticks%10 == 0 {
