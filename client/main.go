@@ -41,7 +41,7 @@ func main() {
 		readline.PcItem("time"),
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
-		readline.PcItem("iam"),
+		readline.PcItem("login"),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",

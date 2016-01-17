@@ -30,6 +30,12 @@ type GlobalState struct {
 	New  bool
 }
 
+type Formatter struct {
+	Blue   func(...interface{}) string
+	Yellow func(...interface{}) string
+	Red    func(...interface{}) string
+}
+
 // GlobalStream for global events
 type GlobalStream struct {
 	Actor
@@ -46,7 +52,9 @@ func NewGlobalStream() *GlobalStream {
 	actor.Actor = *a
 	actor.Players = make(map[*websocket.Conn]Player)
 	actor.Storage = NewStorage()
-	db := actor.Storage.Session.Copy().DB("darklin")
+	s := actor.Storage.Session.Copy()
+	defer s.Close()
+	db := s.DB("darklin")
 	n, _ := db.C("state").Count()
 	actor.State = *new(GlobalState)
 	actor.State.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.Local)
@@ -58,54 +66,64 @@ func NewGlobalStream() *GlobalStream {
 	return actor
 }
 
+func (a *GlobalStream) ProcessEvent(event Event, formatter Formatter) {
+	blue := formatter.Blue
+	yellow := formatter.Yellow
+	switch event.Type {
+	case SECOND:
+		if a.State.New {
+			i := bson.NewObjectId()
+			go a.Storage.DB.C("state").Insert(bson.M{"_id": i}, a.State)
+			// log.Println(err)
+			a.State.New = false
+			a.State.ID = i
+		}
+		a.Broadcast(HEARTBEAT, event.Payload, "heartbeat")
+		a.State.Date = event.Payload.(time.Time)
+		go func() {
+			_ = a.Storage.DB.C("state").Update(bson.M{"_id": a.State.ID}, a.State)
+			// log.Println(err)
+		}()
+	case MESSAGE:
+		log.Println(yellow("MESSAGE:"), event.Payload)
+		a.Broadcast(MESSAGE, event.Payload, event.Sender)
+	case COMMAND:
+		log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
+		switch event.Payload {
+		case "time":
+			a.SendEvent("time", INFO, a.Streams[event.Sender])
+		case "online":
+			log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
+			if event.Sender != "cmd" {
+				a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
+			}
+		case "exit":
+			os.Exit(0)
+		default:
+			switch event.Payload.(type) {
+			case string:
+				if strings.HasPrefix(event.Payload.(string), "/") {
+					a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
+				}
+			}
+		}
+	}
+}
+
 // Live method for dispatch events
 func (a GlobalStream) Live() {
+	s := a.Storage.Session.Copy()
+	defer s.Close()
+	a.Storage.DB = s.DB("darklin")
 	yellow := color.New(color.FgYellow).SprintFunc()
 	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
-	db := a.Storage.Session.Copy().DB("darklin")
+	red := color.New(color.FgRed, color.Bold).SprintFunc()
+	formatter := Formatter{blue, yellow, red}
 	for {
 		event := <-a.Stream
 		// log.Println(event)
 		a.NotifySubscribers(event)
-		switch event.Type {
-		case SECOND:
-			if a.State.New {
-				i := bson.NewObjectId()
-				go db.C("state").Insert(bson.M{"_id": i}, a.State)
-				// log.Println(err)
-				a.State.New = false
-				a.State.ID = i
-			}
-			a.Broadcast(HEARTBEAT, event.Payload, "heartbeat")
-			a.State.Date = event.Payload.(time.Time)
-			go func() {
-				_ = db.C("state").Update(bson.M{"_id": a.State.ID}, a.State)
-				// log.Println(err)
-			}()
-		case MESSAGE:
-			log.Println(yellow("MESSAGE:"), event.Payload)
-			a.Broadcast(MESSAGE, event.Payload, event.Sender)
-		case COMMAND:
-			log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
-			switch event.Payload {
-			case "time":
-				a.SendEvent("time", INFO, a.Streams[event.Sender])
-			case "online":
-				log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
-				if event.Sender != "cmd" {
-					a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
-				}
-			case "exit":
-				os.Exit(0)
-			default:
-				switch event.Payload.(type) {
-				case string:
-					if strings.HasPrefix(event.Payload.(string), "/") {
-						a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
-					}
-				}
-			}
-		}
+		a.ProcessEvent(event, formatter)
 	}
 }
 
