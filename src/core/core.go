@@ -69,23 +69,26 @@ func main() {
 
 	port := flag.Int("port", 80, "port for serving")
 	interactive := flag.Bool("interactive", false, "readline mode")
+	debug := flag.Bool("debug", false, "debug mode")
 	flag.Parse()
 	log.Println(fmt.Sprintf("Serving at :%v", *port))
 	// http.Handle("/", http.FileServer(http.Dir(".")))
 	go http.ListenAndServe(fmt.Sprintf(":%v", *port), nil)
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+	if *debug == true {
+		var mem runtime.MemStats
+		runtime.ReadMemStats(&mem)
+		log.Println(mem.Alloc)
+		log.Println(mem.TotalAlloc)
+		log.Println(mem.HeapAlloc)
+		log.Println(mem.HeapSys)
+		go func() {
+			log.Println(http.ListenAndServe(":6060", nil))
+		}()
+	}
 	if *interactive == false {
 		gs.Live()
 	} else {
 		go gs.Live()
 		RunShell(stream)
 	}
-	var mem runtime.MemStats
-	runtime.ReadMemStats(&mem)
-	log.Println(mem.Alloc)
-	log.Println(mem.TotalAlloc)
-	log.Println(mem.HeapAlloc)
-	log.Println(mem.HeapSys)
 }
