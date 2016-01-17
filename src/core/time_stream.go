@@ -34,7 +34,7 @@ func (a TimeStream) Live() {
 			}
 		}
 	}()
-	for _ := range ticker.C {
+	for _ = range ticker.C {
 		a.Date = a.Date.Add(time.Duration(100 * k * int(time.Millisecond)))
 		a.SendEvent("global", TICK, a.Date)
 		// log.Println(ticks, ticks%10)
