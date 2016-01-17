@@ -29,8 +29,11 @@ func (a TimeStream) Live() {
 	go func() {
 		for {
 			event := <-a.Stream
-			if event.Type == INFO {
+			switch event.Type {
+			case INFO:
 				event.Payload.(chan Event) <- Event{time.Now(), MESSAGE, fmt.Sprintf("Time: %v", a.Date), "time"}
+			case RESET:
+				a.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
 			}
 		}
 	}()

@@ -12,6 +12,7 @@ import (
 type Player struct {
 	Actor
 	Connection *websocket.Conn
+	Loggedin bool
 }
 
 // ConsumeEvent of couse
@@ -26,6 +27,7 @@ func NewPlayer(name string, gs chan Event) *Player {
 	a := NewActor(name, gs)
 	actor := new(Player)
 	actor.Actor = *a
+	actor.Loggedin = false
 	return actor
 }
 

@@ -34,14 +34,25 @@ type Formatter struct {
 	Blue   func(...interface{}) string
 	Yellow func(...interface{}) string
 	Red    func(...interface{}) string
+	Green  func(...interface{}) string
 }
 
 // GlobalStream for global events
 type GlobalStream struct {
 	Actor
-	Players map[*websocket.Conn]Player
+	Players map[*websocket.Conn]*Player
 	Storage *Storage
 	State   GlobalState
+	Formatter Formatter
+}
+
+func (a *GlobalStream) GetPlayer(name string) *Player {
+  for _, v := range a.Players {
+    if v.Name == name {
+			return v
+    }
+  }
+  return &Player{}
 }
 
 // NewGlobalStream constructor
@@ -50,14 +61,20 @@ func NewGlobalStream() *GlobalStream {
 	a := NewActor("global", gs)
 	actor := new(GlobalStream)
 	actor.Actor = *a
-	actor.Players = make(map[*websocket.Conn]Player)
+	actor.Players = make(map[*websocket.Conn]*Player)
 	actor.Storage = NewStorage()
+	yellow := color.New(color.FgYellow).SprintFunc()
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+	red := color.New(color.FgRed, color.Bold).SprintFunc()
+	green := color.New(color.FgGreen, color.Bold).SprintFunc()
+	formatter := Formatter{blue, yellow, red, green}
+	actor.Formatter = formatter
 	s := actor.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
 	n, _ := db.C("state").Count()
 	actor.State = *new(GlobalState)
-	actor.State.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.Local)
+	actor.State.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
 	actor.State.New = true
 	if n != 0 {
 		db.C("state").Find(bson.M{}).One(&actor.State)
@@ -66,7 +83,8 @@ func NewGlobalStream() *GlobalStream {
 	return actor
 }
 
-func (a *GlobalStream) ProcessEvent(event Event, formatter Formatter) {
+func (a *GlobalStream) ProcessEvent(event Event) {
+	formatter := a.Formatter
 	blue := formatter.Blue
 	yellow := formatter.Yellow
 	switch event.Type {
@@ -89,23 +107,48 @@ func (a *GlobalStream) ProcessEvent(event Event, formatter Formatter) {
 		a.Broadcast(MESSAGE, event.Payload, event.Sender)
 	case COMMAND:
 		log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
-		switch event.Payload {
-		case "time":
-			a.SendEvent("time", INFO, a.Streams[event.Sender])
-		case "online":
-			log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
-			if event.Sender != "cmd" {
-				a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
-			}
-		case "exit":
-			os.Exit(0)
-		default:
-			switch event.Payload.(type) {
-			case string:
-				if strings.HasPrefix(event.Payload.(string), "/") {
-					a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
-				}
-			}
+		a.ProcessCommand(event)
+	}
+}
+
+func (a *GlobalStream) ProcessCommand(event Event) {
+	formatter := a.Formatter
+	blue := formatter.Blue
+	tokens := strings.Split(event.Payload.(string), " ")
+	log.Println(tokens, len(tokens))
+	command := strings.ToLower(tokens[0])
+	_, ok := a.Streams[event.Sender]
+	if ok == false && command != "login" {
+		return
+	}
+	switch command {
+	case "reset":
+		if event.Sender == "cmd" {
+			a.SendEvent("time", RESET, a.Streams[event.Sender])
+		}
+	case "time":
+		a.SendEvent("time", INFO, a.Streams[event.Sender])
+	case "online":
+		log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
+		if event.Sender != "cmd" {
+			a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
+		}
+	case "exit":
+		os.Exit(0)
+	case "login":
+		if len(tokens) == 3 {
+			log.Println("try login", blue(tokens[1]), tokens[2])
+			p := a.GetPlayer(event.Sender)
+			// delete(a.Streams, p.Name)
+			p.Name = tokens[1]
+			a.Streams[p.Name] = p.Stream
+			p.Loggedin = true
+			go p.Live()
+			a.SendEvent(p.Name, MESSAGE, "You are logged in as: " + p.Name)
+		}
+	default:
+		if strings.HasPrefix(command, "/") {
+			a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
 		}
 	}
 }
@@ -115,40 +158,36 @@ func (a GlobalStream) Live() {
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	a.Storage.DB = s.DB("darklin")
-	yellow := color.New(color.FgYellow).SprintFunc()
-	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
-	red := color.New(color.FgRed, color.Bold).SprintFunc()
-	formatter := Formatter{blue, yellow, red}
 	for {
 		event := <-a.Stream
 		// log.Println(event)
 		a.NotifySubscribers(event)
-		a.ProcessEvent(event, formatter)
+		a.ProcessEvent(event)
 	}
 }
 
 // CmdHandler - handle user input
 func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
-	red := color.New(color.FgRed).SprintFunc()
+	formatter := a.Formatter
+	red := formatter.Red
 	c, err := upgrader.Upgrade(w, r, nil)
 	name := uuid.New()
 	p := NewPlayer(name, a.Stream)
 	p.Connection = c
-	go p.Live()
-	a.Players[c] = *p
-	a.Streams[name] = p.Stream
+	a.Players[c] = p
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
 	}
 	defer c.Close()
 	for {
+		log.Println("ws loop")
 		_, message, err := c.ReadMessage()
 		if err != nil {
-			// log.Println("read:", err)
+			log.Println("read:", err)
 			log.Println(red("Disconnect"), name)
 			delete(a.Players, c)
-			delete(a.Streams, name)
+			delete(a.Streams, p.Name)
 			break
 		}
 		line := string(message)
@@ -157,7 +196,7 @@ func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		log.Printf("recv: %s", line)
-		a.Stream <- Event{time.Now(), COMMAND, line, name}
+		a.Stream <- Event{time.Now(), COMMAND, line, p.Name}
 		// err = c.WriteMessage(mt, []byte("U r "+name))
 		// if err != nil {
 		// 	log.Println("write:", err)

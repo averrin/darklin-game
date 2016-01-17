@@ -81,9 +81,6 @@ func main() {
 		log.Println(mem.TotalAlloc)
 		log.Println(mem.HeapAlloc)
 		log.Println(mem.HeapSys)
-		go func() {
-			log.Println(http.ListenAndServe(":6060", nil))
-		}()
 	}
 	if *interactive == false {
 		gs.Live()
