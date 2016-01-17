@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
+	"runtime"
 
 	"gopkg.in/mgo.v2"
 )
@@ -71,10 +73,19 @@ func main() {
 	log.Println(fmt.Sprintf("Serving at :%v", *port))
 	// http.Handle("/", http.FileServer(http.Dir(".")))
 	go http.ListenAndServe(fmt.Sprintf(":%v", *port), nil)
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	if *interactive == false {
 		gs.Live()
 	} else {
 		go gs.Live()
 		RunShell(stream)
 	}
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+	log.Println(mem.Alloc)
+	log.Println(mem.TotalAlloc)
+	log.Println(mem.HeapAlloc)
+	log.Println(mem.HeapSys)
 }
