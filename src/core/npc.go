@@ -12,7 +12,7 @@ type Character struct {
 	Room *Area
 }
 
-//NPC
+//NPC - just NPC
 type NPC struct {
 	Character
 	State CharState
