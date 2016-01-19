@@ -17,6 +17,7 @@ const (
 	COMMAND
 	HEARTBEAT
 	RESET
+	CLOSE
 )
 
 // Event is atom of event stream

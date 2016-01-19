@@ -40,19 +40,19 @@ type Formatter struct {
 // GlobalStream for global events
 type GlobalStream struct {
 	Actor
-	Players map[*websocket.Conn]*Player
-	Storage *Storage
-	State   GlobalState
+	Players   map[*websocket.Conn]*Player
+	Storage   *Storage
+	State     GlobalState
 	Formatter Formatter
 }
 
 func (a *GlobalStream) GetPlayer(name string) *Player {
-  for _, v := range a.Players {
-    if v.Name == name {
+	for _, v := range a.Players {
+		if v.Name == name {
 			return v
-    }
-  }
-  return &Player{}
+		}
+	}
+	return &Player{}
 }
 
 // NewGlobalStream constructor
@@ -138,13 +138,25 @@ func (a *GlobalStream) ProcessCommand(event Event) {
 	case "login":
 		if len(tokens) == 3 {
 			log.Println("try login", blue(tokens[1]), tokens[2])
-			p := a.GetPlayer(event.Sender)
-			// delete(a.Streams, p.Name)
-			p.Name = tokens[1]
-			a.Streams[p.Name] = p.Stream
-			p.Loggedin = true
-			go p.Live()
-			a.SendEvent(p.Name, MESSAGE, "You are logged in as: " + p.Name)
+			_, ok := a.Streams[tokens[1]]
+			if ok {
+				var player *Player
+				for _, p := range a.Players {
+					if p.Name == event.Sender {
+						player = p
+						break
+					}
+				}
+				player.Message(NewEvent(MESSAGE, "Пользователь с таким именем уже залогинен", "global"))
+			} else {
+				p := a.GetPlayer(event.Sender)
+				// delete(a.Streams, p.Name)
+				p.Name = tokens[1]
+				a.Streams[p.Name] = p.Stream
+				p.Loggedin = true
+				go p.Live()
+				a.SendEvent(p.Name, MESSAGE, "Вы вошли как: "+p.Name)
+			}
 		}
 	default:
 		if strings.HasPrefix(command, "/") {
@@ -174,6 +186,7 @@ func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
 	name := uuid.New()
 	p := NewPlayer(name, a.Stream)
 	p.Connection = c
+	p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
 	a.Players[c] = p
 	if err != nil {
 		log.Print("upgrade:", err)
@@ -181,11 +194,12 @@ func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 	for {
-		log.Println("ws loop")
 		_, message, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			log.Println(red("Disconnect"), name)
+			p.Loggedin = false
+			p.Stream <- Event{time.Now(), CLOSE, nil, a.Name}
 			delete(a.Players, c)
 			delete(a.Streams, p.Name)
 			break

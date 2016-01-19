@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
@@ -58,35 +57,48 @@ func main() {
 	host := flag.String("host", "core.darkl.in", "host of core")
 	flag.Parse()
 	u := url.URL{Scheme: "ws", Host: *host, Path: "/ws"}
-	conn := connect(u)
-	defer conn.Close()
+	// var connections []*websocket.Conn
+	// var conn *websocket.Conn
+	for index := 0; index < 500; index++ {
+		go func(index int) {
+			conn := connect(u)
+			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("login %v 123", index)))
+			go func(index int) {
+				defer conn.Close()
+				for {
+					conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("/hi from %v", index)))
+					time.Sleep(500 * time.Millisecond)
+				}
+			}(index)
+			// connections = append(connections, conn)
+		}(index)
+	}
 
-	done := make(chan struct{})
+	// done := make(chan struct{})
 
-	go func() {
-		defer conn.Close()
-		defer close(done)
-		for {
-			_, message, err := conn.ReadMessage()
-			// log.Println(string(message))
-			if err != nil {
-				log.Println("read:", err)
-				log.Println("Disconnected... wait...")
-				time.Sleep(500 * time.Millisecond)
-				conn = connect(u)
-				continue
-				// return
-			}
-			var event Event
-			decoder := json.NewDecoder(bytes.NewReader(message))
-			err = decoder.Decode(&event)
-			switch event.Type {
-			case 8:
-			default:
-				log.Printf("\n%s: %v", event.Sender, event.Payload)
-			}
-		}
-	}()
+	// go func() {
+	// 	defer conn.Close()
+	// 	defer close(done)
+	// 	for {
+	// 		_, message, err := conn.ReadMessage()
+	// 		if err != nil {
+	// 			log.Println("read:", err)
+	// 			log.Println("Disconnected... wait...")
+	// 			time.Sleep(500 * time.Millisecond)
+	// 			conn = connect(u)
+	// 			continue
+	// 			// return
+	// 		}
+	// 		var event Event
+	// 		decoder := json.NewDecoder(bytes.NewReader(message))
+	// 		err = decoder.Decode(&event)
+	// 		switch event.Type {
+	// 		case 8:
+	// 		default:
+	// 			log.Printf("\n%s: %v", event.Sender, event.Payload)
+	// 		}
+	// 	}
+	// }()
 
 	for {
 		line, err := rl.Readline()
@@ -101,10 +113,10 @@ func main() {
 		if line == "exit" {
 			os.Exit(0)
 		}
-		err = conn.WriteMessage(websocket.TextMessage, []byte(line))
-		if err != nil {
-			log.Println("write:", err)
-			return
-		}
+		// err = conn.WriteMessage(websocket.TextMessage, []byte(line))
+		// if err != nil {
+		// 	log.Println("write:", err)
+		// 	return
+		// }
 	}
 }

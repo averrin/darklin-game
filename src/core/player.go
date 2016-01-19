@@ -12,7 +12,7 @@ import (
 type Player struct {
 	Actor
 	Connection *websocket.Conn
-	Loggedin bool
+	Loggedin   bool
 }
 
 // ConsumeEvent of couse
@@ -39,12 +39,16 @@ func (a Player) Live() {
 		a.NotifySubscribers(event)
 		switch event.Type {
 		case HEARTBEAT:
-			msg, _ := json.Marshal(event)
-			_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+			a.Message(event)
 		case MESSAGE:
-			// msg := fmt.Sprintf("%v: %v", event.Sender, event.Payload)
-			msg, _ := json.Marshal(event)
-			_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+			a.Message(event)
+		case CLOSE:
+			break
 		}
 	}
+}
+
+func (a Player) Message(event Event) {
+	msg, _ := json.Marshal(event)
+	_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
 }
