@@ -77,13 +77,15 @@ func main() {
 				continue
 				// return
 			}
-			var event Event
+			var event *Event
 			decoder := json.NewDecoder(bytes.NewReader(message))
 			err = decoder.Decode(&event)
 			switch event.Type {
 			case 8:
 			default:
-				log.Printf("\n%s: %v", event.Sender, event.Payload)
+				if !strings.HasPrefix(event.Payload.(string), "hi") {
+					log.Printf("\n%s: %v", event.Sender, event.Payload)
+				}
 			}
 		}
 	}()

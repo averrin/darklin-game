@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -15,7 +17,7 @@ import (
 )
 
 func connect(u url.URL) *websocket.Conn {
-	log.Printf("connecting to %s", u.String())
+	// log.Printf("connecting to %s", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -23,7 +25,7 @@ func connect(u url.URL) *websocket.Conn {
 		time.Sleep(5000 * time.Millisecond)
 		return connect(u)
 	}
-	log.Println("connected")
+	// log.Println("connected")
 	return c
 }
 
@@ -35,6 +37,10 @@ type Event struct {
 }
 
 func main() {
+	host := flag.String("host", "core.darkl.in", "host of core")
+	count := flag.Int("count", 500, "connections count")
+	delay := flag.Int("delay", 500, "message delay")
+	flag.Parse()
 
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("time"),
@@ -43,7 +49,7 @@ func main() {
 		readline.PcItem("login"),
 	)
 	rl, err := readline.NewEx(&readline.Config{
-		Prompt:       ">> ",
+		Prompt:       fmt.Sprintf(">stress [c%vd%vms]> ", *count, *delay),
 		HistoryFile:  "/tmp/readline.tmp",
 		AutoComplete: completer,
 	})
@@ -54,24 +60,51 @@ func main() {
 	log.SetOutput(rl.Stderr())
 	log.SetPrefix("")
 
-	host := flag.String("host", "core.darkl.in", "host of core")
-	flag.Parse()
 	u := url.URL{Scheme: "ws", Host: *host, Path: "/ws"}
 	// var connections []*websocket.Conn
 	// var conn *websocket.Conn
-	for index := 0; index < 500; index++ {
+	lg := 0
+	sended := 0
+	dc := 0
+	// failed := 0
+	for index := 0; index < *count; index++ {
 		go func(index int) {
 			conn := connect(u)
 			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("login %v 123", index)))
-			go func(index int) {
+			go func(index int, conn *websocket.Conn) {
 				defer conn.Close()
 				for {
 					conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("/hi from %v", index)))
-					time.Sleep(500 * time.Millisecond)
+					sended++
+					time.Sleep(time.Duration(*delay * int(time.Millisecond)))
 				}
-			}(index)
+			}(index, conn)
+			go func(conn *websocket.Conn) {
+				defer conn.Close()
+				var event *Event
+				for {
+					_, message, err := conn.ReadMessage()
+					if err != nil {
+						log.Println("Disconnected")
+						log.Printf("\nusers: %v/%v/%v", lg, dc, *count)
+						dc++
+						break
+					}
+					decoder := json.NewDecoder(bytes.NewReader(message))
+					decoder.Decode(&event)
+					switch event.Type {
+					case 14:
+						lg++
+						log.Printf("\nusers: %v/%v/%v", lg, dc, *count)
+						// case 12:
+						// 	failed++
+						// 	log.Printf("\nmessages: %v/%v", failed, sended)
+					}
+				}
+			}(conn)
 			// connections = append(connections, conn)
 		}(index)
+		time.Sleep(time.Duration(50 * int(time.Millisecond)))
 	}
 
 	// done := make(chan struct{})
@@ -89,7 +122,7 @@ func main() {
 	// 			continue
 	// 			// return
 	// 		}
-	// 		var event Event
+	// 		var event *Event
 	// 		decoder := json.NewDecoder(bytes.NewReader(message))
 	// 		err = decoder.Decode(&event)
 	// 		switch event.Type {

@@ -57,7 +57,7 @@ func (a *GlobalStream) GetPlayer(name string) *Player {
 
 // NewGlobalStream constructor
 func NewGlobalStream() *GlobalStream {
-	gs := make(chan Event)
+	gs := make(chan *Event)
 	a := NewActor("global", gs)
 	actor := new(GlobalStream)
 	actor.Actor = *a
@@ -83,9 +83,9 @@ func NewGlobalStream() *GlobalStream {
 	return actor
 }
 
-func (a *GlobalStream) ProcessEvent(event Event) {
+func (a *GlobalStream) ProcessEvent(event *Event) {
 	formatter := a.Formatter
-	blue := formatter.Blue
+	// blue := formatter.Blue
 	yellow := formatter.Yellow
 	switch event.Type {
 	case SECOND:
@@ -106,25 +106,34 @@ func (a *GlobalStream) ProcessEvent(event Event) {
 		log.Println(yellow("MESSAGE:"), event.Payload)
 		a.Broadcast(MESSAGE, event.Payload, event.Sender)
 	case COMMAND:
-		log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
+		// log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
 		a.ProcessCommand(event)
 	}
 }
 
-func (a *GlobalStream) ProcessCommand(event Event) {
+func (a *GlobalStream) ProcessCommand(event *Event) {
 	formatter := a.Formatter
 	blue := formatter.Blue
 	tokens := strings.Split(event.Payload.(string), " ")
-	log.Println(tokens, len(tokens))
+	// log.Println(tokens, len(tokens))
 	command := strings.ToLower(tokens[0])
 	_, ok := a.Streams[event.Sender]
-	if ok == false && command != "login" {
+	// log.Println("Recv command " + command + " from " + event.Sender)
+	if ok == false && command != "login" && event.Sender != "cmd" {
+		log.Println("Discard command " + command + " from " + event.Sender)
 		return
 	}
 	switch command {
+	case "info":
+		log.Println(fmt.Sprintf("Players: %v", a.Players))
+		log.Println(fmt.Sprintf("Streams: %v", a.Streams))
 	case "reset":
 		if event.Sender == "cmd" {
 			a.SendEvent("time", RESET, a.Streams[event.Sender])
+		}
+	case "pause":
+		if event.Sender == "cmd" {
+			a.SendEvent("time", PAUSE, nil)
 		}
 	case "time":
 		a.SendEvent("time", INFO, a.Streams[event.Sender])
@@ -147,7 +156,7 @@ func (a *GlobalStream) ProcessCommand(event Event) {
 						break
 					}
 				}
-				player.Message(NewEvent(MESSAGE, "Пользователь с таким именем уже залогинен", "global"))
+				player.Message(NewEvent(LOGINFAIL, "Пользователь с таким именем уже залогинен", "global"))
 			} else {
 				p := a.GetPlayer(event.Sender)
 				// delete(a.Streams, p.Name)
@@ -155,7 +164,8 @@ func (a *GlobalStream) ProcessCommand(event Event) {
 				a.Streams[p.Name] = p.Stream
 				p.Loggedin = true
 				go p.Live()
-				a.SendEvent(p.Name, MESSAGE, "Вы вошли как: "+p.Name)
+				log.Println("success login", blue(tokens[1]))
+				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)
 			}
 		}
 	default:
@@ -166,7 +176,7 @@ func (a *GlobalStream) ProcessCommand(event Event) {
 }
 
 // Live method for dispatch events
-func (a GlobalStream) Live() {
+func (a *GlobalStream) Live() {
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	a.Storage.DB = s.DB("darklin")
@@ -176,45 +186,59 @@ func (a GlobalStream) Live() {
 		a.NotifySubscribers(event)
 		a.ProcessEvent(event)
 	}
+	// log.Println(a.Formatter.Red("Live stopped"))
 }
 
 // CmdHandler - handle user input
-func (a GlobalStream) CmdHandler(w http.ResponseWriter, r *http.Request) {
+func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
 	formatter := a.Formatter
 	red := formatter.Red
-	c, err := upgrader.Upgrade(w, r, nil)
-	name := uuid.New()
-	p := NewPlayer(name, a.Stream)
-	p.Connection = c
-	p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
-	a.Players[c] = p
-	if err != nil {
-		log.Print("upgrade:", err)
-		return
-	}
-	defer c.Close()
-	for {
-		_, message, err := c.ReadMessage()
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		name := uuid.New()
+		p := NewPlayer(name, a.Stream)
+		c, err := upgrader.Upgrade(w, r, nil)
+		p.Connection = c
+		p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
+		a.Players[c] = p
 		if err != nil {
-			log.Println("read:", err)
-			log.Println(red("Disconnect"), name)
-			p.Loggedin = false
-			p.Stream <- Event{time.Now(), CLOSE, nil, a.Name}
-			delete(a.Players, c)
-			delete(a.Streams, p.Name)
-			break
+			log.Print("upgrade:", err)
+			return
 		}
-		line := string(message)
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
+		defer c.Close()
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil {
+				log.Println("read:", err)
+				log.Println(red("Disconnect"), name)
+				p.Loggedin = false
+				p.Stream <- NewEvent(CLOSE, nil, a.Name)
+				delete(a.Players, c)
+				delete(a.Streams, p.Name)
+				return
+			}
+			line := string(message)
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			a.Stream <- NewEvent(COMMAND, line, p.Name)
+			// log.Printf("recv: %s", line)
+			// select {
+			// case a.Stream <- NewEvent(COMMAND, line, p.Name):
+			// 	log.Println("")
+			// default:
+			// 	if p.Loggedin {
+			// 		p.Message(NewEvent(ERROR, "Skipped message", "global"))
+			// 	} else {
+			// 		p.Message(NewEvent(LOGINFAIL, "Сервер перегружен", "global"))
+			// 		log.Println(red("Disconnect"), name)
+			// 		delete(a.Players, c)
+			// 		// close(p.Stream)
+			// 		return
+			// 	}
+			// 	fmt.Println("no message sent", line, p.Name)
+			// }
 		}
-		log.Printf("recv: %s", line)
-		a.Stream <- Event{time.Now(), COMMAND, line, p.Name}
-		// err = c.WriteMessage(mt, []byte("U r "+name))
-		// if err != nil {
-		// 	log.Println("write:", err)
-		// 	break
-		// }
 	}
 }

@@ -15,9 +15,13 @@ const (
 	HOUR
 	MESSAGE
 	COMMAND
-	HEARTBEAT
+	HEARTBEAT //8
 	RESET
 	CLOSE
+	PAUSE
+	ERROR
+	LOGGEDIN
+	LOGINFAIL
 )
 
 // Event is atom of event stream
@@ -29,11 +33,11 @@ type Event struct {
 }
 
 // NewEvent constructor
-func NewEvent(eventType EventType, payload interface{}, sender string) Event {
+func NewEvent(eventType EventType, payload interface{}, sender string) *Event {
 	event := new(Event)
 	event.Timestamp = time.Now()
 	event.Type = eventType
 	event.Payload = payload
 	event.Sender = sender
-	return *event
+	return event
 }

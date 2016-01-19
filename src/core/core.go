@@ -17,12 +17,12 @@ type TestActor struct {
 }
 
 // ConsumeEvent of couse
-func (a TestActor) ConsumeEvent(event Event) {
+func (a TestActor) ConsumeEvent(event *Event) {
 	a.Stream <- event
 }
 
 // NewTestActor because i, sucj in golang yet
-func NewTestActor(gs chan Event) *TestActor {
+func NewTestActor(gs chan *Event) *TestActor {
 	a := NewActor("announcer", gs)
 	actor := new(TestActor)
 	actor.Actor = *a
@@ -64,8 +64,10 @@ func main() {
 	gs.Subscribe(MINUTE, testActor)
 
 	gs.Streams["time"] = ts.Stream
+	fmt.Println(gs)
+	log.Println(gs.Stream)
 
-	http.HandleFunc("/ws", gs.CmdHandler)
+	http.HandleFunc("/ws", gs.GetPlayerHandler())
 
 	port := flag.Int("port", 80, "port for serving")
 	interactive := flag.Bool("interactive", false, "readline mode")

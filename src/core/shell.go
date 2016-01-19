@@ -2,17 +2,18 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"gopkg.in/readline.v1"
 )
 
 // RunShell - interactive mode
-func RunShell(stream chan Event) {
+func RunShell(stream chan *Event) {
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("time"),
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
+		readline.PcItem("info"),
+		readline.PcItem("reset"),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",
@@ -36,6 +37,6 @@ func RunShell(stream chan Event) {
 			continue
 		}
 		println("<< ", line)
-		stream <- Event{time.Now(), COMMAND, line, "cmd"}
+		stream <- NewEvent(COMMAND, line, "cmd")
 	}
 }

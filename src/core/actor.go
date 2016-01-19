@@ -1,11 +1,5 @@
 package main
 
-import (
-	"log"
-
-	"github.com/fatih/color"
-)
-
 // "fmt"
 
 // Interface - Anybody who can live
@@ -15,7 +9,7 @@ type Interface interface {
 
 // EventSubscriber - can subscribe
 type EventSubscriber interface {
-	ConsumeEvent(Event)
+	ConsumeEvent(*Event)
 }
 
 // EventPublisher - can send
@@ -31,19 +25,19 @@ type Subscription struct {
 
 // Actor - basic event-driven class
 type Actor struct {
-	Stream        chan Event
+	Stream        chan *Event
 	Subscriptions []Subscription
-	Streams       map[string]chan Event
+	Streams       map[string]chan *Event
 	Name          string
 	ID            string
 }
 
 // NewActor construct new Actor
-func NewActor(name string, gs chan Event) *Actor {
+func NewActor(name string, gs chan *Event) *Actor {
 	actor := new(Actor)
-	actor.Streams = make(map[string]chan Event)
+	actor.Streams = make(map[string]chan *Event)
 	actor.Streams["global"] = gs
-	actor.Stream = make(chan Event)
+	actor.Stream = make(chan *Event)
 	actor.Name = name
 	return actor
 }
@@ -65,10 +59,10 @@ func (a Actor) SendEventWithSender(reciever string, eventType EventType, payload
 // Broadcast - send all
 func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string) {
 	event := NewEvent(eventType, payload, sender)
-	yellow := color.New(color.FgYellow).SprintFunc()
-	if event.Type != HEARTBEAT {
-		log.Println(yellow("Broadcast event"), event)
-	}
+	// yellow := color.New(color.FgYellow).SprintFunc()
+	// if event.Type != HEARTBEAT {
+	// 	log.Println(yellow("Broadcast event"), event)
+	// }
 	for r := range a.Streams {
 		if r == "global" || r == sender || r == "time" {
 			continue
@@ -78,7 +72,7 @@ func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string
 }
 
 // ForwardEvent to new reciever
-func (a Actor) ForwardEvent(reciever string, event Event) {
+func (a Actor) ForwardEvent(reciever string, event *Event) {
 	a.Streams[reciever] <- event
 }
 
@@ -88,7 +82,7 @@ func (a *Actor) Subscribe(eventType EventType, subscriber EventSubscriber) {
 }
 
 // NotifySubscribers wgen u have event
-func (a Actor) NotifySubscribers(event Event) {
+func (a Actor) NotifySubscribers(event *Event) {
 	for _, s := range a.Subscriptions {
 		if event.Type == s.Type || s.Type == ALL {
 			go s.Subscriber.ConsumeEvent(event)
