@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
 
@@ -22,8 +21,8 @@ func (a *Player) ConsumeEvent(event *Event) {
 
 // NewPlayer because i, sucj in golang yet
 func NewPlayer(name string, gs chan *Event) *Player {
-	green := color.New(color.FgGreen).SprintFunc()
-	log.Println("New player: ", green(name))
+	// green := color.New(color.FgGreen).SprintFunc()
+	// log.Println("New player: ", green(name))
 	a := NewActor(name, gs)
 	actor := new(Player)
 	actor.Actor = *a

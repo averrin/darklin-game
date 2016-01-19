@@ -59,6 +59,7 @@ func (a Actor) SendEventWithSender(reciever string, eventType EventType, payload
 // Broadcast - send all
 func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string) {
 	event := NewEvent(eventType, payload, sender)
+	defer func() { recover() }()
 	// yellow := color.New(color.FgYellow).SprintFunc()
 	// if event.Type != HEARTBEAT {
 	// 	log.Println(yellow("Broadcast event"), event)
@@ -73,6 +74,7 @@ func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string
 
 // ForwardEvent to new reciever
 func (a Actor) ForwardEvent(reciever string, event *Event) {
+	defer func() { recover() }()
 	a.Streams[reciever] <- event
 }
 

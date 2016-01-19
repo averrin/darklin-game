@@ -26,7 +26,7 @@ func (a *TimeStream) Live() {
 	k := 1
 	ticks := 0
 	ticker := time.NewTicker(time.Duration(100 * k * int(time.Millisecond)))
-	paused := true
+	paused := false
 	go func() {
 		for {
 			event := <-a.Stream

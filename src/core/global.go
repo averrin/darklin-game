@@ -112,8 +112,8 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 }
 
 func (a *GlobalStream) ProcessCommand(event *Event) {
-	formatter := a.Formatter
-	blue := formatter.Blue
+	// formatter := a.Formatter
+	// blue := formatter.Blue
 	tokens := strings.Split(event.Payload.(string), " ")
 	// log.Println(tokens, len(tokens))
 	command := strings.ToLower(tokens[0])
@@ -146,7 +146,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 		os.Exit(0)
 	case "login":
 		if len(tokens) == 3 {
-			log.Println("try login", blue(tokens[1]), tokens[2])
+			// log.Println("try login", blue(tokens[1]), tokens[2])
 			_, ok := a.Streams[tokens[1]]
 			if ok {
 				var player *Player
@@ -164,7 +164,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				a.Streams[p.Name] = p.Stream
 				p.Loggedin = true
 				go p.Live()
-				log.Println("success login", blue(tokens[1]))
+				// log.Println("success login", blue(tokens[1]))
 				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)
 			}
 		}
@@ -211,7 +211,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 			if err != nil {
 				log.Println("read:", err)
 				log.Println(red("Disconnect"), name)
-				p.Loggedin = false
+				// p.Loggedin = false
 				p.Stream <- NewEvent(CLOSE, nil, a.Name)
 				delete(a.Players, c)
 				delete(a.Streams, p.Name)
