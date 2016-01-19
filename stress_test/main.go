@@ -29,6 +29,7 @@ func connect(u url.URL) *websocket.Conn {
 	return c
 }
 
+//Event - atomic action
 type Event struct {
 	Timestamp time.Time
 	Type      int

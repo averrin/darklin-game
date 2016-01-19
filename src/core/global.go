@@ -11,7 +11,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"code.google.com/p/go-uuid/uuid"
-	"github.com/fatih/color"
 
 	// "golang.org/x/net/websocket"
 	"github.com/gorilla/websocket"
@@ -30,24 +29,15 @@ type GlobalState struct {
 	New  bool
 }
 
-type Formatter struct {
-	Blue   func(...interface{}) string
-	Yellow func(...interface{}) string
-	Red    func(...interface{}) string
-	Green  func(...interface{}) string
-}
-
 // GlobalStream for global events
 type GlobalStream struct {
-	Actor
-	Players   map[*websocket.Conn]*Player
-	Storage   *Storage
-	State     GlobalState
-	Formatter Formatter
+	Area
+	State GlobalState
 }
 
+//GetPlayer by name
 func (a *GlobalStream) GetPlayer(name string) *Player {
-	for _, v := range a.Players {
+	for v := range a.Players {
 		if v.Name == name {
 			return v
 		}
@@ -58,17 +48,9 @@ func (a *GlobalStream) GetPlayer(name string) *Player {
 // NewGlobalStream constructor
 func NewGlobalStream() *GlobalStream {
 	gs := make(chan *Event)
-	a := NewActor("global", gs)
+	a := NewArea("global", gs)
 	actor := new(GlobalStream)
-	actor.Actor = *a
-	actor.Players = make(map[*websocket.Conn]*Player)
-	actor.Storage = NewStorage()
-	yellow := color.New(color.FgYellow).SprintFunc()
-	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
-	red := color.New(color.FgRed, color.Bold).SprintFunc()
-	green := color.New(color.FgGreen, color.Bold).SprintFunc()
-	formatter := Formatter{blue, yellow, red, green}
-	actor.Formatter = formatter
+	actor.Area = *a
 	s := actor.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
@@ -83,6 +65,7 @@ func NewGlobalStream() *GlobalStream {
 	return actor
 }
 
+//ProcessEvent in global stream
 func (a *GlobalStream) ProcessEvent(event *Event) {
 	formatter := a.Formatter
 	// blue := formatter.Blue
@@ -111,6 +94,7 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 	}
 }
 
+//ProcessCommand from user or cmd
 func (a *GlobalStream) ProcessCommand(event *Event) {
 	// formatter := a.Formatter
 	// blue := formatter.Blue
@@ -149,13 +133,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 			// log.Println("try login", blue(tokens[1]), tokens[2])
 			_, ok := a.Streams[tokens[1]]
 			if ok {
-				var player *Player
-				for _, p := range a.Players {
-					if p.Name == event.Sender {
-						player = p
-						break
-					}
-				}
+				player := a.GetPlayer(event.Sender)
 				player.Message(NewEvent(LOGINFAIL, "Пользователь с таким именем уже залогинен", "global"))
 			} else {
 				p := a.GetPlayer(event.Sender)
@@ -189,7 +167,7 @@ func (a *GlobalStream) Live() {
 	// log.Println(a.Formatter.Red("Live stopped"))
 }
 
-// CmdHandler - handle user input
+// GetPlayerHandler - handle user input
 func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
 	formatter := a.Formatter
 	red := formatter.Red
@@ -200,7 +178,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.Connection = c
 		p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
-		a.Players[c] = p
+		a.Players[p] = c
 		if err != nil {
 			log.Print("upgrade:", err)
 			return
@@ -213,7 +191,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				log.Println(red("Disconnect"), name)
 				// p.Loggedin = false
 				p.Stream <- NewEvent(CLOSE, nil, a.Name)
-				delete(a.Players, c)
+				delete(a.Players, p)
 				delete(a.Streams, p.Name)
 				return
 			}
@@ -223,22 +201,6 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				continue
 			}
 			a.Stream <- NewEvent(COMMAND, line, p.Name)
-			// log.Printf("recv: %s", line)
-			// select {
-			// case a.Stream <- NewEvent(COMMAND, line, p.Name):
-			// 	log.Println("")
-			// default:
-			// 	if p.Loggedin {
-			// 		p.Message(NewEvent(ERROR, "Skipped message", "global"))
-			// 	} else {
-			// 		p.Message(NewEvent(LOGINFAIL, "Сервер перегружен", "global"))
-			// 		log.Println(red("Disconnect"), name)
-			// 		delete(a.Players, c)
-			// 		// close(p.Stream)
-			// 		return
-			// 	}
-			// 	fmt.Println("no message sent", line, p.Name)
-			// }
 		}
 	}
 }

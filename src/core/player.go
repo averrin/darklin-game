@@ -57,6 +57,7 @@ func (a *Player) Live() {
 	log.Println("Exit from Live of " + a.Name)
 }
 
+//Message - send event direct to ws
 func (a *Player) Message(event *Event) {
 	msg, _ := json.Marshal(event)
 	_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))

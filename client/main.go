@@ -28,6 +28,7 @@ func connect(u url.URL) *websocket.Conn {
 	return c
 }
 
+//Event - event from server
 type Event struct {
 	Timestamp time.Time
 	Type      int
@@ -66,26 +67,28 @@ func main() {
 	go func() {
 		defer conn.Close()
 		defer close(done)
+		m := 0
 		for {
 			_, message, err := conn.ReadMessage()
-			// log.Println(string(message))
+			log.Println(string(message))
 			if err != nil {
-				log.Println("read:", err)
+				// log.Println("read:", err)
 				log.Println("Disconnected... wait...")
 				time.Sleep(500 * time.Millisecond)
 				conn = connect(u)
 				continue
 				// return
 			}
+			m++
 			var event *Event
 			decoder := json.NewDecoder(bytes.NewReader(message))
 			err = decoder.Decode(&event)
 			switch event.Type {
 			case 8:
 			default:
-				if !strings.HasPrefix(event.Payload.(string), "hi") {
-					log.Printf("\n%s: %v", event.Sender, event.Payload)
-				}
+				// if !strings.HasPrefix(event.Payload.(string), "hi") {
+				// log.Printf("\n%s: %v", event.Sender, event.Payload)
+				// }
 			}
 		}
 	}()
