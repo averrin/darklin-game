@@ -19,28 +19,24 @@ type TestActor struct {
 
 // ConsumeEvent of couse
 func (a TestActor) ConsumeEvent(event *Event) {
-	a.Stream <- event
+	*a.Stream <- event
 }
 
 // NewTestActor because i, sucj in golang yet
-func NewTestActor(gs chan *Event) *TestActor {
+func NewTestActor(gs *chan *Event) *TestActor {
 	a := NewActor("announcer", gs)
 	actor := new(TestActor)
 	actor.Actor = *a
 	return actor
 }
 
-// Live - i need print something
-func (a TestActor) Live() {
-	for {
-		event := <-a.Stream
-		a.NotifySubscribers(event)
-		switch event.Type {
-		case SECOND:
-			a.SendEvent("global", MESSAGE, "Every second, mister")
-		case MINUTE:
-			a.SendEvent("global", MESSAGE, "Every minute, boss")
-		}
+// ProcessEvent - i need print something
+func (a TestActor) ProcessEvent(event *Event) {
+	switch event.Type {
+	case SECOND:
+		a.SendEvent("global", MESSAGE, "Every second, mister")
+	case MINUTE:
+		a.SendEvent("global", MESSAGE, "Every minute, boss")
 	}
 }
 
@@ -55,6 +51,7 @@ func main() {
 
 	gs := NewGlobalStream()
 	stream := gs.Stream
+	log.Println(stream)
 	ts := NewTimeStream(stream, gs.State.Date)
 	go ts.Live()
 
@@ -65,8 +62,6 @@ func main() {
 	gs.Subscribe(MINUTE, testActor)
 
 	gs.Streams["time"] = ts.Stream
-	fmt.Println(gs)
-	log.Println(gs.Stream)
 
 	http.HandleFunc("/ws", gs.GetPlayerHandler())
 

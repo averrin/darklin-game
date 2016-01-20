@@ -13,7 +13,7 @@ type TimeStream struct {
 }
 
 // NewTimeStream constructor
-func NewTimeStream(gs chan *Event, date time.Time) *TimeStream {
+func NewTimeStream(gs *chan *Event, date time.Time) *TimeStream {
 	a := NewActor("time", gs)
 	actor := new(TimeStream)
 	actor.Actor = *a
@@ -29,7 +29,7 @@ func (a *TimeStream) Live() {
 	paused := false
 	go func() {
 		for {
-			event := <-a.Stream
+			event := <-*a.Stream
 			switch event.Type {
 			case INFO:
 				event.Payload.(chan *Event) <- NewEvent(MESSAGE, fmt.Sprintf("Time: %v", a.Date), "time")

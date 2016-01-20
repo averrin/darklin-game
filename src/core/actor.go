@@ -1,10 +1,13 @@
 package main
 
+import "log"
+
 // "fmt"
 
 // Interface - Anybody who can live
 type Interface interface {
 	Live()
+	ProcessEvent(event *Event)
 }
 
 // EventSubscriber - can subscribe
@@ -25,20 +28,25 @@ type Subscription struct {
 
 // Actor - basic event-driven class
 type Actor struct {
-	Stream        chan *Event
+	Stream        *chan *Event
 	Subscriptions []Subscription
-	Streams       map[string]chan *Event
+	Streams       map[string]*chan *Event
 	Name          string
 	ID            string
+	Storage       *Storage
+	ProcessEvent  func(event *Event)
 }
 
 // NewActor construct new Actor
-func NewActor(name string, gs chan *Event) *Actor {
+func NewActor(name string, gs *chan *Event) *Actor {
 	actor := new(Actor)
-	actor.Streams = make(map[string]chan *Event)
+	actor.Streams = make(map[string]*chan *Event)
 	actor.Streams["global"] = gs
-	actor.Stream = make(chan *Event)
+	s := make(chan *Event)
+	actor.Stream = &s
 	actor.Name = name
+	actor.Storage = NewStorage()
+	actor.ProcessEvent = actor.ProcessEventAbstract
 	return actor
 }
 
@@ -46,14 +54,14 @@ func NewActor(name string, gs chan *Event) *Actor {
 func (a Actor) SendEvent(reciever string, eventType EventType, payload interface{}) {
 	event := NewEvent(eventType, payload, a.Name)
 	stream := a.Streams[reciever]
-	stream <- event
+	*stream <- event
 }
 
 // SendEventWithSender - fake sender
 func (a Actor) SendEventWithSender(reciever string, eventType EventType, payload interface{}, sender string) {
 	event := NewEvent(eventType, payload, sender)
 	stream := a.Streams[reciever]
-	stream <- event
+	*stream <- event
 }
 
 // Broadcast - send all
@@ -68,14 +76,27 @@ func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string
 		if r == "global" || r == sender || r == "time" {
 			continue
 		}
-		a.Streams[r] <- event
+		*a.Streams[r] <- event
+	}
+}
+
+// BroadcastRoom - send all
+func (a *GlobalStream) BroadcastRoom(eventType EventType, payload interface{}, sender string, room string) {
+	streams := a.Rooms[room].Streams
+	event := NewEvent(eventType, payload, sender)
+	defer func() { recover() }()
+	for r, s := range streams {
+		if r == "global" || r == sender || r == "time" {
+			continue
+		}
+		*s <- event
 	}
 }
 
 // ForwardEvent to new reciever
 func (a Actor) ForwardEvent(reciever string, event *Event) {
 	defer func() { recover() }()
-	a.Streams[reciever] <- event
+	*a.Streams[reciever] <- event
 }
 
 // Subscribe on events
@@ -95,4 +116,23 @@ func (a Actor) NotifySubscribers(event *Event) {
 // AddStream to Streams
 func (a *Actor) AddStream(subscriber Actor) {
 	a.Streams[subscriber.Name] = subscriber.Stream
+}
+
+// Live method for dispatch events
+func (a *Actor) Live() {
+	s := a.Storage.Session.Copy()
+	defer s.Close()
+	a.Storage.DB = s.DB("darklin")
+	for {
+		event := <-*a.Stream
+		// log.Println(a.Name, event)
+		a.NotifySubscribers(event)
+		a.ProcessEvent(event)
+	}
+	// log.Println(a.Formatter.Red("Live stopped"))
+}
+
+//ProcessEventAbstract - dummy processor
+func (a *Actor) ProcessEventAbstract(event *Event) {
+	log.Println(a.Name, event)
 }

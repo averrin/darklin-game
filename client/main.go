@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
@@ -25,6 +27,22 @@ func connect(u url.URL) *websocket.Conn {
 		return connect(u)
 	}
 	log.Println("connected")
+	file, err := os.Open("./client/init.cmd")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fmt.Println("<<", scanner.Text())
+		c.WriteMessage(websocket.TextMessage, []byte(scanner.Text()))
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
 	return c
 }
 
@@ -70,7 +88,7 @@ func main() {
 		m := 0
 		for {
 			_, message, err := conn.ReadMessage()
-			log.Println(string(message))
+			// log.Println(string(message))
 			if err != nil {
 				// log.Println("read:", err)
 				log.Println("Disconnected... wait...")
@@ -87,7 +105,7 @@ func main() {
 			case 8:
 			default:
 				// if !strings.HasPrefix(event.Payload.(string), "hi") {
-				// log.Printf("\n%s: %v", event.Sender, event.Payload)
+				log.Printf("\n%s: %v", event.Sender, event.Payload)
 				// }
 			}
 		}
@@ -102,7 +120,7 @@ func main() {
 		if line == "" {
 			continue
 		}
-		println("<< ", line)
+		println("<<", line)
 		if line == "exit" {
 			os.Exit(0)
 		}

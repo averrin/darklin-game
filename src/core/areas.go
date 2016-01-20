@@ -1,24 +1,28 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"log"
+	"strings"
+
+	"github.com/gorilla/websocket"
+)
 
 //Area - room for players
 type Area struct {
 	Actor
 	Players   map[*Player]*websocket.Conn
-	Storage   *Storage
 	Formatter Formatter
 }
 
 // NewArea constructor
-func NewArea(name string, gs chan *Event) *Area {
+func NewArea(name string, gs *chan *Event) *Area {
 	a := NewActor(name, gs)
 	actor := new(Area)
 	actor.Actor = *a
 	actor.Players = make(map[*Player]*websocket.Conn)
-	actor.Storage = NewStorage()
 	formatter := NewFormatter()
 	actor.Formatter = formatter
+	actor.Actor.ProcessEvent = actor.ProcessEvent
 	// s := actor.Storage.Session.Copy()
 	// defer s.Close()
 	// db := s.DB("darklin")
@@ -31,4 +35,25 @@ func NewArea(name string, gs chan *Event) *Area {
 	// 	actor.State.New = false
 	// }
 	return actor
+}
+
+//ProcessEvent from user or cmd
+func (a *Area) ProcessEvent(event *Event) {
+	log.Println(a.Streams["global"])
+	// formatter := a.Formatter
+	// blue := formatter.Blue
+	tokens := strings.Split(event.Payload.(string), " ")
+	// log.Println(tokens, len(tokens))
+	command := strings.ToLower(tokens[0])
+	// log.Println(command)
+	_, ok := a.Streams[event.Sender]
+	log.Println("Recv command " + command + " from " + event.Sender)
+	if ok == false && command != "login" && event.Sender != "cmd" {
+		log.Println("Discard command " + command + " from " + event.Sender)
+		return
+	}
+	switch command {
+	default:
+		a.ForwardEvent("global", event)
+	}
 }

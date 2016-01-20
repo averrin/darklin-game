@@ -33,6 +33,7 @@ type GlobalState struct {
 type GlobalStream struct {
 	Area
 	State GlobalState
+	Rooms map[string]*Area
 }
 
 //GetPlayer by name
@@ -48,7 +49,7 @@ func (a *GlobalStream) GetPlayer(name string) *Player {
 // NewGlobalStream constructor
 func NewGlobalStream() *GlobalStream {
 	gs := make(chan *Event)
-	a := NewArea("global", gs)
+	a := NewArea("global", &gs)
 	actor := new(GlobalStream)
 	actor.Area = *a
 	s := actor.Storage.Session.Copy()
@@ -58,6 +59,11 @@ func NewGlobalStream() *GlobalStream {
 	actor.State = *new(GlobalState)
 	actor.State.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
 	actor.State.New = true
+	actor.Rooms = make(map[string]*Area)
+	actor.Actor.ProcessEvent = actor.ProcessEvent
+	room := NewArea("default", &gs)
+	go room.Live()
+	actor.Rooms["default"] = room
 	if n != 0 {
 		db.C("state").Find(bson.M{}).One(&actor.State)
 		actor.State.New = false
@@ -87,7 +93,7 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 		}()
 	case MESSAGE:
 		log.Println(yellow("MESSAGE:"), event.Payload)
-		a.Broadcast(MESSAGE, event.Payload, event.Sender)
+		a.BroadcastRoom(MESSAGE, event.Payload, event.Sender, "default")
 	case COMMAND:
 		// log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
 		a.ProcessCommand(event)
@@ -96,6 +102,7 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 
 //ProcessCommand from user or cmd
 func (a *GlobalStream) ProcessCommand(event *Event) {
+	log.Println(event)
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	tokens := strings.Split(event.Payload.(string), " ")
@@ -141,6 +148,9 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				p.Name = tokens[1]
 				a.Streams[p.Name] = p.Stream
 				p.Loggedin = true
+				p.Streams["room"] = a.Rooms["default"].Stream
+				a.Rooms["default"].Players[p] = p.Connection
+				a.Rooms["default"].Streams[p.Name] = p.Stream
 				go p.Live()
 				// log.Println("success login", blue(tokens[1]))
 				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)
@@ -153,20 +163,6 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 	}
 }
 
-// Live method for dispatch events
-func (a *GlobalStream) Live() {
-	s := a.Storage.Session.Copy()
-	defer s.Close()
-	a.Storage.DB = s.DB("darklin")
-	for {
-		event := <-a.Stream
-		// log.Println(event)
-		a.NotifySubscribers(event)
-		a.ProcessEvent(event)
-	}
-	// log.Println(a.Formatter.Red("Live stopped"))
-}
-
 // GetPlayerHandler - handle user input
 func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
 	formatter := a.Formatter
@@ -175,6 +171,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := uuid.New()
 		p := NewPlayer(name, a.Stream)
+		p.Streams["room"] = a.Stream
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.Connection = c
 		p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
@@ -190,7 +187,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				log.Println("read:", err)
 				log.Println(red("Disconnect"), name)
 				// p.Loggedin = false
-				p.Stream <- NewEvent(CLOSE, nil, a.Name)
+				*p.Stream <- NewEvent(CLOSE, nil, a.Name)
 				delete(a.Players, p)
 				delete(a.Streams, p.Name)
 				return
@@ -200,7 +197,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 			if line == "" {
 				continue
 			}
-			a.Stream <- NewEvent(COMMAND, line, p.Name)
+			*p.Streams["room"] <- NewEvent(COMMAND, line, p.Name)
 		}
 	}
 }
