@@ -28,7 +28,7 @@ func connect(u url.URL) *websocket.Conn {
 		time.Sleep(5000 * time.Millisecond)
 		return connect(u)
 	}
-	log.Println("connected")
+	// log.Println("connected")
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	initPath := path.Join(dir, "init.cmd")
 	if _, err := os.Stat(initPath); err == nil {
@@ -118,9 +118,9 @@ func main() {
 			switch event.Type {
 			case 8:
 			default:
-				if !strings.HasPrefix(event.Payload.(string), "hi") {
-					log.Printf("\n%s: %v", event.Sender, event.Payload)
-				}
+				// if !strings.HasPrefix(event.Payload.(string), "hi") {
+				log.Printf("\n%s: %v", event.Sender, event.Payload)
+				// }
 			}
 		}
 	}()

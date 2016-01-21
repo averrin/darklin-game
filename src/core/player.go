@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -75,4 +77,16 @@ func (a *Player) ChangeRoom(room *Area) {
 	if prevRoom != nil {
 		a.Stream <- NewEvent(ROOMCHANGED, fmt.Sprintf("You are here: %v", a.Room.Name), "global")
 	}
+}
+
+//PlayerState - db saved state
+type PlayerState struct {
+	ID       bson.ObjectId `bson:"_id,omitempty"`
+	Name     string
+	Password string
+
+	Room string
+	HP   int
+
+	New bool
 }
