@@ -96,8 +96,12 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 		}()
 	case MESSAGE:
 		log.Println(yellow("MESSAGE:"), event.Payload)
-		p := a.GetPlayer(event.Sender)
-		a.BroadcastRoom(MESSAGE, event.Payload, event.Sender, p.Room)
+		if event.Sender != "Announcer" {
+			p := a.GetPlayer(event.Sender)
+			a.BroadcastRoom(MESSAGE, event.Payload, event.Sender, p.Room)
+		} else {
+			a.Broadcast(MESSAGE, event.Payload, event.Sender)
+		}
 	case COMMAND:
 		// log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
 		a.ProcessCommand(event)

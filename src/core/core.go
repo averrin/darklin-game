@@ -12,34 +12,6 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-// TestActor just someone who do something
-type TestActor struct {
-	Actor
-}
-
-// ConsumeEvent of couse
-func (a TestActor) ConsumeEvent(event *Event) {
-	a.Stream <- event
-}
-
-// NewTestActor because i, sucj in golang yet
-func NewTestActor(gs *chan *Event) *TestActor {
-	a := NewActor("announcer", gs)
-	actor := new(TestActor)
-	actor.Actor = *a
-	return actor
-}
-
-// ProcessEvent - i need print something
-func (a TestActor) ProcessEvent(event *Event) {
-	switch event.Type {
-	case SECOND:
-		a.SendEvent("global", MESSAGE, "Every second, mister")
-	case MINUTE:
-		a.SendEvent("global", MESSAGE, "Every minute, boss")
-	}
-}
-
 func main() {
 	var err error
 	session, err = mgo.Dial("mongo")
@@ -54,11 +26,11 @@ func main() {
 	ts := NewTimeStream(&gs.Stream, gs.State.Date)
 	go ts.Live()
 
-	testActor := NewTestActor(&gs.Stream)
-	go testActor.Live()
+	announcer := NewAnnouncer(&gs.Stream)
+	go announcer.Live()
 
-	// gs.Subscribe(SECOND, testActor)
-	gs.Subscribe(MINUTE, testActor)
+	// gs.Subscribe(SECOND, announcer)
+	gs.Subscribe(MINUTE, announcer)
 
 	gs.Streams["time"] = &ts.Stream
 

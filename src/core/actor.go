@@ -83,7 +83,7 @@ func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string
 func (a *Actor) BroadcastRoom(eventType EventType, payload interface{}, sender string, room *Area) {
 	event := NewEvent(eventType, payload, sender)
 	defer func() { recover() }()
-	for p, _ := range room.Players {
+	for p := range room.Players {
 		if p.Name == sender {
 			continue
 		}
@@ -132,5 +132,5 @@ func (a *Actor) Live() {
 
 //ProcessEventAbstract - dummy processor
 func (a *Actor) ProcessEventAbstract(event *Event) {
-	log.Println(a.Name, event)
+	log.Println("Abstract", a.Name, event)
 }
