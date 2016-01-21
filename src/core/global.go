@@ -61,9 +61,9 @@ func NewGlobalStream() GlobalStream {
 	actor.State.New = true
 	actor.Rooms = make(map[string]*Area)
 	actor.Actor.ProcessEvent = actor.ProcessEvent
-	room := NewArea("default", &actor.Stream)
+	room := NewArea("first", &actor.Stream)
 	go room.Live()
-	actor.Rooms["default"] = &room
+	actor.Rooms["first"] = &room
 	room2 := NewArea("second", &actor.Stream)
 	go room2.Live()
 	actor.Rooms["second"] = &room2
@@ -144,7 +144,11 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 			p := a.GetPlayer(event.Sender)
 			room, ok := a.Rooms[tokens[1]]
 			if ok {
-				p.ChangeRoom(room)
+				if p.Room == room {
+					a.SendEvent(event.Sender, ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
+				} else {
+					p.ChangeRoom(room)
+				}
 			} else {
 				a.SendEvent(event.Sender, ERROR, fmt.Sprintf("No such room: %v", tokens[1]))
 			}
@@ -162,7 +166,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				p.Name = tokens[1]
 				a.Streams[p.Name] = &p.Stream
 				p.Loggedin = true
-				p.ChangeRoom(a.Rooms["default"])
+				p.ChangeRoom(a.Rooms["first"])
 				go p.Live()
 				// log.Println("success login", blue(tokens[1]))
 				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)

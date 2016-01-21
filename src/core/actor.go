@@ -134,17 +134,3 @@ func (a *Actor) Live() {
 func (a *Actor) ProcessEventAbstract(event *Event) {
 	log.Println(a.Name, event)
 }
-
-//ChangeRoom - enter to new room
-func (a *Player) ChangeRoom(room *Area) {
-	if a.Room != nil && a.Room.Name != "global" {
-		a.BroadcastRoom(ROOMEXIT, nil, a.Name, a.Room)
-		delete(a.Room.Streams, a.Name)
-		delete(a.Room.Players, a)
-	}
-	a.Streams["room"] = &room.Stream
-	a.Room = room
-	room.Players[a] = a.Connection
-	room.Streams[a.Name] = &a.Stream
-	a.BroadcastRoom(ROOMENTER, nil, a.Name, a.Room)
-}

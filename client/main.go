@@ -104,9 +104,9 @@ func main() {
 			switch event.Type {
 			case 8:
 			default:
-				// if !strings.HasPrefix(event.Payload.(string), "hi") {
-				log.Printf("\n%s: %v", event.Sender, event.Payload)
-				// }
+				if !strings.HasPrefix(event.Payload.(string), "hi") {
+					log.Printf("\n%s: %v", event.Sender, event.Payload)
+				}
 			}
 		}
 	}()

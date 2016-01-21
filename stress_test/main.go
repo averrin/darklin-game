@@ -48,6 +48,7 @@ func main() {
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
 		readline.PcItem("login"),
+		readline.PcItem("goto"),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       fmt.Sprintf(">stress [c%vd%vms]> ", *count, *delay),
@@ -72,6 +73,9 @@ func main() {
 		go func(index int) {
 			conn := connect(u)
 			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("login %v 123", index)))
+			if index%2 == 0 {
+				conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("goto second", index)))
+			}
 			go func(index int, conn *websocket.Conn) {
 				defer conn.Close()
 				for {

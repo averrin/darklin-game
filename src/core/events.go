@@ -27,6 +27,7 @@ const (
 	LOGINFAIL
 	ROOMEXIT
 	ROOMENTER
+	ROOMCHANGED
 )
 
 // Event is atom of event stream

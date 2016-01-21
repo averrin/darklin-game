@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/gorilla/websocket"
@@ -41,17 +42,11 @@ func (a *Player) Live() {
 		}
 		a.NotifySubscribers(event)
 		switch event.Type {
-		case HEARTBEAT:
-			a.Message(event)
-		case MESSAGE:
-			a.Message(event)
-		case LOGGEDIN:
-			a.Message(event)
-		case ERROR:
-			a.Message(event)
 		case CLOSE:
 			a.Loggedin = false
 			break
+		default:
+			a.Message(event)
 		}
 	}
 	close(a.Stream)
@@ -62,4 +57,22 @@ func (a *Player) Live() {
 func (a *Player) Message(event *Event) {
 	msg, _ := json.Marshal(event)
 	_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+}
+
+//ChangeRoom - enter to new room
+func (a *Player) ChangeRoom(room *Area) {
+	prevRoom := a.Room
+	if prevRoom != nil {
+		a.BroadcastRoom(ROOMEXIT, "Exit from room "+a.Room.Name, a.Name, a.Room)
+		delete(a.Room.Streams, a.Name)
+		delete(a.Room.Players, a)
+	}
+	a.Streams["room"] = &room.Stream
+	a.Room = room
+	room.Players[a] = a.Connection
+	room.Streams[a.Name] = &a.Stream
+	a.BroadcastRoom(ROOMENTER, "Enter into room "+a.Room.Name, a.Name, a.Room)
+	if prevRoom != nil {
+		a.Stream <- NewEvent(ROOMCHANGED, fmt.Sprintf("You are here: %v", a.Room.Name), "global")
+	}
 }
