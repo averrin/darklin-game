@@ -123,6 +123,7 @@ func (a *Actor) Live() {
 	a.Storage.DB = s.DB("darklin")
 	for {
 		event := <-a.Stream
+		exp_events_processed.Add(1)
 		// log.Println(a.Name, event)
 		a.NotifySubscribers(event)
 		a.ProcessEvent(event)

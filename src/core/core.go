@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +11,10 @@ import (
 	"runtime"
 
 	"gopkg.in/mgo.v2"
+)
+
+var (
+	exp_events_processed = expvar.NewInt("events_processed")
 )
 
 func main() {
