@@ -51,7 +51,7 @@ func NewGlobalStream() GlobalStream {
 	gs := make(chan *Event)
 	a := NewArea("global", &gs)
 	actor := new(GlobalStream)
-	actor.Area = *a
+	actor.Area = a
 	s := actor.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
@@ -63,7 +63,10 @@ func NewGlobalStream() GlobalStream {
 	actor.Actor.ProcessEvent = actor.ProcessEvent
 	room := NewArea("default", &actor.Stream)
 	go room.Live()
-	actor.Rooms["default"] = room
+	actor.Rooms["default"] = &room
+	room2 := NewArea("second", &actor.Stream)
+	go room2.Live()
+	actor.Rooms["second"] = &room2
 	if n != 0 {
 		db.C("state").Find(bson.M{}).One(&actor.State)
 		actor.State.New = false
@@ -93,7 +96,8 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 		}()
 	case MESSAGE:
 		log.Println(yellow("MESSAGE:"), event.Payload)
-		a.BroadcastRoom(MESSAGE, event.Payload, event.Sender, "default")
+		p := a.GetPlayer(event.Sender)
+		a.BroadcastRoom(MESSAGE, event.Payload, event.Sender, p.Room)
 	case COMMAND:
 		// log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
 		a.ProcessCommand(event)
@@ -135,6 +139,16 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 		}
 	case "exit":
 		os.Exit(0)
+	case "goto":
+		if len(tokens) == 2 {
+			p := a.GetPlayer(event.Sender)
+			room, ok := a.Rooms[tokens[1]]
+			if ok {
+				p.ChangeRoom(room)
+			} else {
+				a.SendEvent(event.Sender, ERROR, fmt.Sprintf("No such room: %v", tokens[1]))
+			}
+		}
 	case "login":
 		if len(tokens) == 3 {
 			// log.Println("try login", blue(tokens[1]), tokens[2])
@@ -148,9 +162,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				p.Name = tokens[1]
 				a.Streams[p.Name] = &p.Stream
 				p.Loggedin = true
-				p.Streams["room"] = &a.Rooms["default"].Stream
-				a.Rooms["default"].Players[p] = p.Connection
-				a.Rooms["default"].Streams[p.Name] = &p.Stream
+				p.ChangeRoom(a.Rooms["default"])
 				go p.Live()
 				// log.Println("success login", blue(tokens[1]))
 				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)

@@ -15,7 +15,7 @@ type Area struct {
 }
 
 // NewArea constructor
-func NewArea(name string, gs *chan *Event) *Area {
+func NewArea(name string, gs *chan *Event) Area {
 	a := NewActor(name, gs)
 	actor := new(Area)
 	actor.Actor = *a
@@ -34,7 +34,7 @@ func NewArea(name string, gs *chan *Event) *Area {
 	// 	db.C("state").Find(bson.M{}).One(&actor.State)
 	// 	actor.State.New = false
 	// }
-	return actor
+	return *actor
 }
 
 //ProcessEvent from user or cmd
@@ -46,14 +46,18 @@ func (a *Area) ProcessEvent(event *Event) {
 	command := strings.ToLower(tokens[0])
 	// log.Println(command)
 	_, ok := a.Streams[event.Sender]
-	log.Println("Recv command " + command + " from " + event.Sender)
+	log.Println(a.Name + ": Recv command '" + event.Payload.(string) + "' from " + event.Sender)
 	if ok == false && command != "login" && event.Sender != "cmd" {
 		log.Println("Discard command " + command + " from " + event.Sender)
 		return
 	}
 	switch command {
 	default:
-		log.Println(a.Name, "forward", event)
-		a.ForwardEvent("global", event)
+		if strings.HasPrefix(command, "/") {
+			a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
+		} else {
+			log.Println(a.Name, "forward", event)
+			a.ForwardEvent("global", event)
+		}
 	}
 }

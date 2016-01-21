@@ -80,15 +80,14 @@ func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string
 }
 
 // BroadcastRoom - send all
-func (a *GlobalStream) BroadcastRoom(eventType EventType, payload interface{}, sender string, room string) {
-	streams := a.Rooms[room].Streams
+func (a *Actor) BroadcastRoom(eventType EventType, payload interface{}, sender string, room *Area) {
 	event := NewEvent(eventType, payload, sender)
 	defer func() { recover() }()
-	for r, s := range streams {
-		if r == "global" || r == sender || r == "time" {
+	for p, _ := range room.Players {
+		if p.Name == sender {
 			continue
 		}
-		*s <- event
+		p.Stream <- event
 	}
 }
 
@@ -134,4 +133,18 @@ func (a *Actor) Live() {
 //ProcessEventAbstract - dummy processor
 func (a *Actor) ProcessEventAbstract(event *Event) {
 	log.Println(a.Name, event)
+}
+
+//ChangeRoom - enter to new room
+func (a *Player) ChangeRoom(room *Area) {
+	if a.Room != nil && a.Room.Name != "global" {
+		a.BroadcastRoom(ROOMEXIT, nil, a.Name, a.Room)
+		delete(a.Room.Streams, a.Name)
+		delete(a.Room.Players, a)
+	}
+	a.Streams["room"] = &room.Stream
+	a.Room = room
+	room.Players[a] = a.Connection
+	room.Streams[a.Name] = &a.Stream
+	a.BroadcastRoom(ROOMENTER, nil, a.Name, a.Room)
 }

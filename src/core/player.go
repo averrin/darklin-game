@@ -12,6 +12,7 @@ type Player struct {
 	Actor
 	Connection *websocket.Conn
 	Loggedin   bool
+	Room       *Area
 }
 
 // ConsumeEvent of couse

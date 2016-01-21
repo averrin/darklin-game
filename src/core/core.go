@@ -50,7 +50,7 @@ func main() {
 	session.SetMode(mgo.Monotonic, true)
 
 	gs := NewGlobalStream()
-	log.Println(gs.Stream)
+	// log.Println(gs.Stream)
 	ts := NewTimeStream(&gs.Stream, gs.State.Date)
 	go ts.Live()
 
