@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // EventType is a basic event type
 type EventType int
@@ -22,6 +25,8 @@ const (
 	ERROR
 	LOGGEDIN
 	LOGINFAIL
+	ROOMEXIT
+	ROOMENTER
 )
 
 // Event is atom of event stream
@@ -30,6 +35,10 @@ type Event struct {
 	Type      EventType
 	Payload   interface{}
 	Sender    string
+}
+
+func (event Event) String() string {
+	return fmt.Sprintf("{Sender: %v; Type: %v; Payload: %v}", event.Sender, event.Type, event.Payload)
 }
 
 // NewEvent constructor

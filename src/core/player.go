@@ -16,7 +16,7 @@ type Player struct {
 
 // ConsumeEvent of couse
 func (a *Player) ConsumeEvent(event *Event) {
-	*a.Stream <- event
+	a.Stream <- event
 }
 
 // NewPlayer because i, sucj in golang yet
@@ -34,7 +34,7 @@ func NewPlayer(name string, gs *chan *Event) *Player {
 func (a *Player) Live() {
 	// log.Println("Player", a.Name, "Live")
 	for a.Loggedin {
-		event, ok := <-*a.Stream
+		event, ok := <-a.Stream
 		if !ok {
 			return
 		}
@@ -53,7 +53,7 @@ func (a *Player) Live() {
 			break
 		}
 	}
-	close(*(a.Stream))
+	close(a.Stream)
 	log.Println("Exit from Live of " + a.Name)
 }
 

@@ -29,7 +29,7 @@ func (a *TimeStream) Live() {
 	paused := false
 	go func() {
 		for {
-			event := <-*a.Stream
+			event := <-a.Stream
 			switch event.Type {
 			case INFO:
 				event.Payload.(chan *Event) <- NewEvent(MESSAGE, fmt.Sprintf("Time: %v", a.Date), "time")

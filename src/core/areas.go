@@ -39,7 +39,6 @@ func NewArea(name string, gs *chan *Event) *Area {
 
 //ProcessEvent from user or cmd
 func (a *Area) ProcessEvent(event *Event) {
-	log.Println(a.Streams["global"])
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	tokens := strings.Split(event.Payload.(string), " ")
@@ -54,6 +53,7 @@ func (a *Area) ProcessEvent(event *Event) {
 	}
 	switch command {
 	default:
+		log.Println(a.Name, "forward", event)
 		a.ForwardEvent("global", event)
 	}
 }

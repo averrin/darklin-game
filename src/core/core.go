@@ -19,7 +19,7 @@ type TestActor struct {
 
 // ConsumeEvent of couse
 func (a TestActor) ConsumeEvent(event *Event) {
-	*a.Stream <- event
+	a.Stream <- event
 }
 
 // NewTestActor because i, sucj in golang yet
@@ -50,18 +50,17 @@ func main() {
 	session.SetMode(mgo.Monotonic, true)
 
 	gs := NewGlobalStream()
-	stream := gs.Stream
-	log.Println(stream)
-	ts := NewTimeStream(stream, gs.State.Date)
+	log.Println(gs.Stream)
+	ts := NewTimeStream(&gs.Stream, gs.State.Date)
 	go ts.Live()
 
-	testActor := NewTestActor(stream)
+	testActor := NewTestActor(&gs.Stream)
 	go testActor.Live()
 
 	// gs.Subscribe(SECOND, testActor)
 	gs.Subscribe(MINUTE, testActor)
 
-	gs.Streams["time"] = ts.Stream
+	gs.Streams["time"] = &ts.Stream
 
 	http.HandleFunc("/ws", gs.GetPlayerHandler())
 
@@ -85,6 +84,6 @@ func main() {
 		gs.Live()
 	} else {
 		go gs.Live()
-		RunShell(stream)
+		RunShell(&gs.Stream)
 	}
 }

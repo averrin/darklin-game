@@ -47,7 +47,7 @@ func (a *GlobalStream) GetPlayer(name string) *Player {
 }
 
 // NewGlobalStream constructor
-func NewGlobalStream() *GlobalStream {
+func NewGlobalStream() GlobalStream {
 	gs := make(chan *Event)
 	a := NewArea("global", &gs)
 	actor := new(GlobalStream)
@@ -61,14 +61,14 @@ func NewGlobalStream() *GlobalStream {
 	actor.State.New = true
 	actor.Rooms = make(map[string]*Area)
 	actor.Actor.ProcessEvent = actor.ProcessEvent
-	room := NewArea("default", &gs)
+	room := NewArea("default", &actor.Stream)
 	go room.Live()
 	actor.Rooms["default"] = room
 	if n != 0 {
 		db.C("state").Find(bson.M{}).One(&actor.State)
 		actor.State.New = false
 	}
-	return actor
+	return *actor
 }
 
 //ProcessEvent in global stream
@@ -146,11 +146,11 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				p := a.GetPlayer(event.Sender)
 				// delete(a.Streams, p.Name)
 				p.Name = tokens[1]
-				a.Streams[p.Name] = p.Stream
+				a.Streams[p.Name] = &p.Stream
 				p.Loggedin = true
-				p.Streams["room"] = a.Rooms["default"].Stream
+				p.Streams["room"] = &a.Rooms["default"].Stream
 				a.Rooms["default"].Players[p] = p.Connection
-				a.Rooms["default"].Streams[p.Name] = p.Stream
+				a.Rooms["default"].Streams[p.Name] = &p.Stream
 				go p.Live()
 				// log.Println("success login", blue(tokens[1]))
 				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)
@@ -170,8 +170,8 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := uuid.New()
-		p := NewPlayer(name, a.Stream)
-		p.Streams["room"] = a.Stream
+		p := NewPlayer(name, &a.Stream)
+		p.Streams["room"] = &a.Stream
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.Connection = c
 		p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
@@ -187,7 +187,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				log.Println("read:", err)
 				log.Println(red("Disconnect"), name)
 				// p.Loggedin = false
-				*p.Stream <- NewEvent(CLOSE, nil, a.Name)
+				p.Stream <- NewEvent(CLOSE, nil, a.Name)
 				delete(a.Players, p)
 				delete(a.Streams, p.Name)
 				return

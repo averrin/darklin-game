@@ -28,7 +28,7 @@ type Subscription struct {
 
 // Actor - basic event-driven class
 type Actor struct {
-	Stream        *chan *Event
+	Stream        chan *Event
 	Subscriptions []Subscription
 	Streams       map[string]*chan *Event
 	Name          string
@@ -42,8 +42,7 @@ func NewActor(name string, gs *chan *Event) *Actor {
 	actor := new(Actor)
 	actor.Streams = make(map[string]*chan *Event)
 	actor.Streams["global"] = gs
-	s := make(chan *Event)
-	actor.Stream = &s
+	actor.Stream = make(chan *Event)
 	actor.Name = name
 	actor.Storage = NewStorage()
 	actor.ProcessEvent = actor.ProcessEventAbstract
@@ -95,7 +94,7 @@ func (a *GlobalStream) BroadcastRoom(eventType EventType, payload interface{}, s
 
 // ForwardEvent to new reciever
 func (a Actor) ForwardEvent(reciever string, event *Event) {
-	defer func() { recover() }()
+	// defer func() { recover() }()
 	*a.Streams[reciever] <- event
 }
 
@@ -115,7 +114,7 @@ func (a Actor) NotifySubscribers(event *Event) {
 
 // AddStream to Streams
 func (a *Actor) AddStream(subscriber Actor) {
-	a.Streams[subscriber.Name] = subscriber.Stream
+	a.Streams[subscriber.Name] = &subscriber.Stream
 }
 
 // Live method for dispatch events
@@ -124,7 +123,7 @@ func (a *Actor) Live() {
 	defer s.Close()
 	a.Storage.DB = s.DB("darklin")
 	for {
-		event := <-*a.Stream
+		event := <-a.Stream
 		// log.Println(a.Name, event)
 		a.NotifySubscribers(event)
 		a.ProcessEvent(event)
