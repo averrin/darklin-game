@@ -135,7 +135,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 			a.SendEvent("time", PAUSE, nil)
 		}
 	case "time":
-		a.SendEvent("time", INFO, a.Streams[event.Sender])
+		a.SendEvent("time", INFO, *a.Streams[event.Sender])
 	case "online":
 		log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
 		if event.Sender != "cmd" {

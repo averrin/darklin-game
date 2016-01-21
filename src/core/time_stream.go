@@ -32,7 +32,7 @@ func (a *TimeStream) Live() {
 			event := <-a.Stream
 			switch event.Type {
 			case INFO:
-				event.Payload.(chan *Event) <- NewEvent(MESSAGE, fmt.Sprintf("Time: %v", a.Date), "time")
+				event.Payload.(chan *Event) <- NewEvent(MESSAGE, fmt.Sprint(a.Date), "time")
 			case RESET:
 				a.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
 			case PAUSE:

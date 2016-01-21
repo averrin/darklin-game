@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -27,20 +29,28 @@ func connect(u url.URL) *websocket.Conn {
 		return connect(u)
 	}
 	log.Println("connected")
-	file, err := os.Open("./client/init.cmd")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	initPath := path.Join(dir, "init.cmd")
+	if _, err := os.Stat(initPath); err == nil {
+		file, err := os.Open(initPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		fmt.Println("<<", scanner.Text())
-		c.WriteMessage(websocket.TextMessage, []byte(scanner.Text()))
-	}
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			log.Println(line)
+			if line != "" && !strings.HasPrefix(line, "#") {
+				fmt.Println("<<", line)
+				c.WriteMessage(websocket.TextMessage, []byte(line))
+			}
+		}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return c
@@ -61,6 +71,10 @@ func main() {
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
 		readline.PcItem("login"),
+		readline.PcItem("goto",
+			readline.PcItem("first"),
+			readline.PcItem("second"),
+		),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",

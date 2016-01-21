@@ -48,7 +48,6 @@ func main() {
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
 		readline.PcItem("login"),
-		readline.PcItem("goto"),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       fmt.Sprintf(">stress [c%vd%vms]> ", *count, *delay),
