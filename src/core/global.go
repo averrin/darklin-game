@@ -103,7 +103,7 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 
 //ProcessCommand from user or cmd
 func (a *GlobalStream) ProcessCommand(event *Event) {
-	log.Println(event)
+	// log.Println(event)
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	tokens := strings.Split(event.Payload.(string), " ")
@@ -153,24 +153,25 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 			}
 		}()
 	case "login":
-		go func() {
-			if len(tokens) == 3 {
-				// log.Println("try login", blue(tokens[1]), tokens[2])
-				_, ok := a.Streams[tokens[1]]
-				if ok {
-					player := a.GetPlayer(event.Sender)
-					player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
+		//TODO: do it faster
+		// go func() {
+		if len(tokens) == 3 {
+			// log.Println("try login", blue(tokens[1]), tokens[2])
+			_, ok := a.Streams[tokens[1]]
+			if ok {
+				player := a.GetPlayer(event.Sender)
+				player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
+			} else {
+				p := a.GetPlayer(event.Sender)
+				err, _ := p.Login(tokens[1], tokens[2])
+				if err != "" {
+					p.Message(NewEvent(ERROR, err, "global"))
 				} else {
-					p := a.GetPlayer(event.Sender)
-					err, _ := p.Login(tokens[1], tokens[2])
-					if err != "" {
-						p.Message(NewEvent(ERROR, err, "global"))
-					} else {
-						a.Streams[p.Name] = &p.Stream
-					}
+					a.Streams[p.Name] = &p.Stream
 				}
 			}
-		}()
+		}
+		// }()
 	case "help":
 		p := a.GetPlayer(event.Sender)
 		go a.SendEvent(p.Name, SYSTEMMESSAGE, "Help message")
@@ -193,7 +194,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.Connection = c
 		p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
-		a.Players[p] = c
+		a.Players[&p] = c
 		if err != nil {
 			log.Print("upgrade:", err)
 			return
@@ -205,8 +206,10 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				log.Println("read:", err)
 				log.Println(red("Disconnect"), name)
 				// p.Loggedin = false
-				p.Stream <- NewEvent(CLOSE, nil, a.Name)
-				delete(a.Players, p)
+				go func() {
+					p.Stream <- NewEvent(CLOSE, nil, a.Name)
+				}()
+				delete(a.Players, &p)
 				delete(a.Streams, p.Name)
 				return
 			}

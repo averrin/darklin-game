@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/ugorji/go/codec"
 
 	"gopkg.in/readline.v1"
 )
@@ -94,8 +94,12 @@ func main() {
 						dc++
 						break
 					}
-					decoder := json.NewDecoder(bytes.NewReader(message))
-					decoder.Decode(&event)
+					var mh codec.MsgpackHandle
+					dec := codec.NewDecoder(bytes.NewReader(message), &mh)
+					err = dec.Decode(&event)
+					if err != nil {
+						log.Fatal(err)
+					}
 					switch event.Type {
 					case 14:
 						lg++

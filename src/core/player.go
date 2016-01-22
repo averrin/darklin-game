@@ -27,16 +27,17 @@ func (a *Player) ConsumeEvent(event *Event) {
 }
 
 // NewPlayer because i, sucj in golang yet
-func NewPlayer(name string, gs *chan *Event) *Player {
+func NewPlayer(name string, gs *chan *Event) Player {
 	// green := color.New(color.FgGreen).SprintFunc()
 	// log.Println("New player: ", green(name))
 	a := NewActor(name, gs)
 	actor := new(Player)
 	actor.Actor = *a
 	actor.Loggedin = false
-	return actor
+	return *actor
 }
 
+//HashPassword - hash. password.
 func HashPassword(password string) string {
 	hash := sha256.New()
 	hash.Write([]byte(password))
@@ -48,31 +49,32 @@ func HashPassword(password string) string {
 //Login user
 func (a *Player) Login(login string, password string) (string, bool) {
 	// delete(a.Streams, p.Name)
-	a.Name = login
+	password = HashPassword(password)
+	a.State = *new(PlayerState)
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
-	n, _ := db.C("players").Find(bson.M{"name": a.Name}).Count()
-	a.State = *new(PlayerState)
-	a.State.New = true
-	a.State.Name = a.Name
-	password = HashPassword(password)
-	a.State.Password = password
-	a.State.Room = "first"
-	a.State.HP = 10
+	n, _ := db.C("players").Find(bson.M{"name": login}).Count()
 	if n != 0 {
-		db.C("players").Find(bson.M{"name": a.Name}).One(&a.State)
+		db.C("players").Find(bson.M{"name": login}).One(&a.State)
 		if password != a.State.Password {
 			return "wrong password", false
 		}
 		a.State.New = false
+	} else {
+		a.State.New = true
+		a.State.Name = login
+		a.State.Password = password
+		a.State.Room = "first"
+		a.State.HP = 10
 	}
+	a.Name = login
 	a.Loggedin = true
 	a.ChangeRoom(WORLD.Rooms[a.State.Room])
 	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
 	go a.Live()
 	// log.Println("success login", blue(tokens[1]))
-	a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, a.Name))
+	go a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, a.Name))
 	return "", a.State.New
 }
 
@@ -86,7 +88,6 @@ func (a *Player) UpdateState() {
 
 // Live - i need print something
 func (a *Player) Live() {
-	// log.Println("Player", a.Name, "Live")
 	for a.Loggedin {
 		event, ok := <-a.Stream
 		if !ok {
@@ -95,6 +96,7 @@ func (a *Player) Live() {
 		a.NotifySubscribers(event)
 		switch event.Type {
 		case CLOSE:
+			// log.Println("Player", a.Name, "CLOSE")
 			a.Loggedin = false
 			break
 		default:
