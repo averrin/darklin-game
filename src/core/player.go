@@ -1,13 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/gorilla/websocket"
+	"github.com/ugorji/go/codec"
 )
 
 // Player just someone who do something
@@ -57,8 +57,15 @@ func (a *Player) Live() {
 
 //Message - send event direct to ws
 func (a *Player) Message(event *Event) {
-	msg, _ := json.Marshal(event)
-	_ = a.Connection.WriteMessage(websocket.TextMessage, []byte(msg))
+	var msg []byte
+	// var b []byte
+	var mh codec.MsgpackHandle
+	enc := codec.NewEncoderBytes(&msg, &mh)
+	err := enc.Encode(event)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_ = a.Connection.WriteMessage(websocket.TextMessage, msg)
 }
 
 //ChangeRoom - enter to new room

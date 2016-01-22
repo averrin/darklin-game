@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -14,10 +13,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
+	"github.com/ugorji/go/codec"
 
 	"gopkg.in/readline.v1"
 )
+
+// type EventType int
+//
+// // Event is atom of event stream
+// type Event struct {
+// 	Timestamp time.Time
+// 	Type      EventType
+// 	Payload   interface{}
+// 	Sender    string
+// }
 
 func connect(u url.URL) *websocket.Conn {
 	log.Printf("connecting to %s", u.String())
@@ -56,14 +67,6 @@ func connect(u url.URL) *websocket.Conn {
 	return c
 }
 
-//Event - event from server
-type Event struct {
-	Timestamp time.Time
-	Type      int
-	Payload   interface{}
-	Sender    string
-}
-
 func main() {
 
 	var completer = readline.NewPrefixCompleter(
@@ -71,6 +74,7 @@ func main() {
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
 		readline.PcItem("login"),
+		readline.PcItem("help"),
 		readline.PcItem("goto",
 			readline.PcItem("first"),
 			readline.PcItem("second"),
@@ -88,6 +92,10 @@ func main() {
 	log.SetOutput(rl.Stderr())
 	log.SetPrefix("")
 
+	print := func(template string, a ...interface{}) {
+		fmt.Fprintf(rl.Stderr(), template+"\n", a...)
+	}
+
 	host := flag.String("host", "core.darkl.in", "host of core")
 	flag.Parse()
 	u := url.URL{Scheme: "ws", Host: *host, Path: "/ws"}
@@ -95,6 +103,10 @@ func main() {
 	defer conn.Close()
 
 	done := make(chan struct{})
+
+	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 
 	go func() {
 		defer conn.Close()
@@ -113,13 +125,30 @@ func main() {
 			}
 			m++
 			var event *Event
-			decoder := json.NewDecoder(bytes.NewReader(message))
-			err = decoder.Decode(&event)
+
+			// decoder := json.NewDecoder(bytes.NewReader(message))
+			// err = decoder.Decode(&event)
+			var mh codec.MsgpackHandle
+			dec := codec.NewDecoder(bytes.NewReader(message), &mh)
+			err = dec.Decode(&event)
+			if err != nil {
+				log.Fatal(err)
+			}
 			switch event.Type {
-			case 8:
+			case HEARTBEAT:
+			case SYSTEMMESSAGE:
+				sep := green("|")
+				print(fmt.Sprintf(sep+" %s", event.Payload))
+			case LOGGEDIN:
+				sep := green("|")
+				print(fmt.Sprintf(sep+" %s", event.Payload))
+			case ERROR:
+				sep := red("!")
+				print(fmt.Sprintf(sep+" %s", event.Payload))
 			default:
+				sep := blue(">")
 				// if !strings.HasPrefix(event.Payload.(string), "hi") {
-				log.Printf("\n%s: %v", event.Sender, event.Payload)
+				print(fmt.Sprintf(sep+" %s: %s", event.Sender, event.Payload))
 				// }
 			}
 		}

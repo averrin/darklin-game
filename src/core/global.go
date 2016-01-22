@@ -70,6 +70,7 @@ func NewGlobalStream() GlobalStream {
 	if n != 0 {
 		db.C("state").Find(bson.M{}).One(&actor.State)
 		actor.State.New = false
+		actor.State.Date = actor.State.Date.In(time.UTC)
 	}
 	return *actor
 }
@@ -139,7 +140,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 	case "online":
 		log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
 		if event.Sender != "cmd" {
-			a.SendEvent(event.Sender, MESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
+			a.SendEvent(event.Sender, SYSTEMMESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
 		}
 	case "exit":
 		os.Exit(0)
@@ -163,7 +164,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 			_, ok := a.Streams[tokens[1]]
 			if ok {
 				player := a.GetPlayer(event.Sender)
-				player.Message(NewEvent(LOGINFAIL, "Пользователь с таким именем уже залогинен", "global"))
+				player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
 			} else {
 				p := a.GetPlayer(event.Sender)
 				// delete(a.Streams, p.Name)
@@ -176,6 +177,9 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)
 			}
 		}
+	case "help":
+		p := a.GetPlayer(event.Sender)
+		a.SendEvent(p.Name, SYSTEMMESSAGE, "Help message")
 	default:
 		if strings.HasPrefix(command, "/") {
 			a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)

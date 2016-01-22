@@ -28,6 +28,7 @@ const (
 	ROOMEXIT
 	ROOMENTER
 	ROOMCHANGED
+	SYSTEMMESSAGE
 )
 
 // Event is atom of event stream
