@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 
@@ -35,6 +37,14 @@ func NewPlayer(name string, gs *chan *Event) *Player {
 	return actor
 }
 
+func HashPassword(password string) string {
+	hash := sha256.New()
+	hash.Write([]byte(password))
+	md := hash.Sum(nil)
+	mdStr := hex.EncodeToString(md)
+	return mdStr
+}
+
 //Login user
 func (a *Player) Login(login string, password string) (string, bool) {
 	// delete(a.Streams, p.Name)
@@ -46,11 +56,15 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	a.State = *new(PlayerState)
 	a.State.New = true
 	a.State.Name = a.Name
+	password = HashPassword(password)
 	a.State.Password = password
 	a.State.Room = "first"
 	a.State.HP = 10
 	if n != 0 {
 		db.C("players").Find(bson.M{"name": a.Name}).One(&a.State)
+		if password != a.State.Password {
+			return "wrong password", false
+		}
 		a.State.New = false
 	}
 	a.Loggedin = true
@@ -59,7 +73,7 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	go a.Live()
 	// log.Println("success login", blue(tokens[1]))
 	a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, a.Name))
-	return "success", true
+	return "", a.State.New
 }
 
 //UpdateState - save state into db

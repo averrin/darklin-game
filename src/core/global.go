@@ -121,55 +121,62 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 		log.Println(fmt.Sprintf("Streams: %v", a.Streams))
 	case "reset":
 		if event.Sender == "cmd" {
-			a.SendEvent("time", RESET, a.Streams[event.Sender])
+			go a.SendEvent("time", RESET, a.Streams[event.Sender])
 		}
 	case "pause":
 		if event.Sender == "cmd" {
-			a.SendEvent("time", PAUSE, nil)
+			go a.SendEvent("time", PAUSE, nil)
 		}
 	case "time":
-		a.SendEvent("time", INFO, *a.Streams[event.Sender])
+		go a.SendEvent("time", INFO, *a.Streams[event.Sender])
 	case "online":
 		log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
 		if event.Sender != "cmd" {
-			a.SendEvent(event.Sender, SYSTEMMESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
+			go a.SendEvent(event.Sender, SYSTEMMESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
 		}
 	case "exit":
 		os.Exit(0)
 	case "goto":
-		if len(tokens) == 2 {
-			p := a.GetPlayer(event.Sender)
-			room, ok := WORLD.Rooms[tokens[1]]
-			if ok {
-				if p.Room == room {
-					a.SendEvent(event.Sender, ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
-				} else {
-					p.ChangeRoom(room)
-				}
-			} else {
-				a.SendEvent(event.Sender, ERROR, fmt.Sprintf("No such room: %v", tokens[1]))
-			}
-		}
-	case "login":
-		if len(tokens) == 3 {
-			// log.Println("try login", blue(tokens[1]), tokens[2])
-			_, ok := a.Streams[tokens[1]]
-			if ok {
-				player := a.GetPlayer(event.Sender)
-				player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
-			} else {
+		go func() {
+			if len(tokens) == 2 {
 				p := a.GetPlayer(event.Sender)
-				p.Login(tokens[1], tokens[2])
-				a.Streams[p.Name] = &p.Stream
-				// a.ChangeRoom(a.Rooms["first"])
+				room, ok := WORLD.Rooms[tokens[1]]
+				if ok {
+					if p.Room == room {
+						a.SendEvent(event.Sender, ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
+					} else {
+						p.ChangeRoom(room)
+					}
+				} else {
+					a.SendEvent(event.Sender, ERROR, fmt.Sprintf("No such room: %v", tokens[1]))
+				}
 			}
-		}
+		}()
+	case "login":
+		go func() {
+			if len(tokens) == 3 {
+				// log.Println("try login", blue(tokens[1]), tokens[2])
+				_, ok := a.Streams[tokens[1]]
+				if ok {
+					player := a.GetPlayer(event.Sender)
+					player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
+				} else {
+					p := a.GetPlayer(event.Sender)
+					err, _ := p.Login(tokens[1], tokens[2])
+					if err != "" {
+						p.Message(NewEvent(ERROR, err, "global"))
+					} else {
+						a.Streams[p.Name] = &p.Stream
+					}
+				}
+			}
+		}()
 	case "help":
 		p := a.GetPlayer(event.Sender)
-		a.SendEvent(p.Name, SYSTEMMESSAGE, "Help message")
+		go a.SendEvent(p.Name, SYSTEMMESSAGE, "Help message")
 	default:
 		if strings.HasPrefix(command, "/") {
-			a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
+			go a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
 		}
 	}
 }

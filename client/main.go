@@ -117,7 +117,7 @@ func main() {
 			// log.Println(string(message))
 			if err != nil {
 				// log.Println("read:", err)
-				log.Println("Disconnected... wait...")
+				log.Println(red("Disconnected...") + " wait...")
 				time.Sleep(500 * time.Millisecond)
 				conn = connect(u)
 				continue
@@ -138,17 +138,17 @@ func main() {
 			case HEARTBEAT:
 			case SYSTEMMESSAGE:
 				sep := green("|")
-				print(fmt.Sprintf(sep+" %s", event.Payload))
+				print(sep+" %s", event.Payload)
 			case LOGGEDIN:
 				sep := green("|")
-				print(fmt.Sprintf(sep+" %s", event.Payload))
+				print(sep+" %s", event.Payload)
 			case ERROR:
 				sep := red("!")
-				print(fmt.Sprintf(sep+" %s", event.Payload))
+				print(sep+" %s", event.Payload)
 			default:
 				sep := blue(">")
 				// if !strings.HasPrefix(event.Payload.(string), "hi") {
-				print(fmt.Sprintf(sep+" %s: %s", event.Sender, event.Payload))
+				print(sep+" %s: %s", event.Sender, event.Payload)
 				// }
 			}
 		}
@@ -163,7 +163,7 @@ func main() {
 		if line == "" {
 			continue
 		}
-		println("<<", line)
+		// println("<<", line)
 		if line == "exit" {
 			os.Exit(0)
 		}
