@@ -33,7 +33,6 @@ type GlobalState struct {
 type GlobalStream struct {
 	Area
 	State GlobalState
-	Rooms map[string]*Area
 }
 
 //GetPlayer by name
@@ -59,14 +58,7 @@ func NewGlobalStream() GlobalStream {
 	actor.State = *new(GlobalState)
 	actor.State.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
 	actor.State.New = true
-	actor.Rooms = make(map[string]*Area)
 	actor.Actor.ProcessEvent = actor.ProcessEvent
-	room := NewArea("first", &actor.Stream)
-	go room.Live()
-	actor.Rooms["first"] = &room
-	room2 := NewArea("second", &actor.Stream)
-	go room2.Live()
-	actor.Rooms["second"] = &room2
 	if n != 0 {
 		db.C("state").Find(bson.M{}).One(&actor.State)
 		actor.State.New = false
@@ -147,7 +139,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 	case "goto":
 		if len(tokens) == 2 {
 			p := a.GetPlayer(event.Sender)
-			room, ok := a.Rooms[tokens[1]]
+			room, ok := WORLD.Rooms[tokens[1]]
 			if ok {
 				if p.Room == room {
 					a.SendEvent(event.Sender, ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
@@ -167,14 +159,9 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
 			} else {
 				p := a.GetPlayer(event.Sender)
-				// delete(a.Streams, p.Name)
-				p.Name = tokens[1]
+				p.Login(tokens[1], tokens[2])
 				a.Streams[p.Name] = &p.Stream
-				p.Loggedin = true
-				p.ChangeRoom(a.Rooms["first"])
-				go p.Live()
-				// log.Println("success login", blue(tokens[1]))
-				a.SendEvent(p.Name, LOGGEDIN, "Вы вошли как: "+p.Name)
+				// a.ChangeRoom(a.Rooms["first"])
 			}
 		}
 	case "help":

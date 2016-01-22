@@ -14,6 +14,7 @@ import (
 type Player struct {
 	Actor
 	Connection *websocket.Conn
+	State      PlayerState
 	Loggedin   bool
 	Room       *Area
 }
@@ -32,6 +33,41 @@ func NewPlayer(name string, gs *chan *Event) *Player {
 	actor.Actor = *a
 	actor.Loggedin = false
 	return actor
+}
+
+//Login user
+func (a *Player) Login(login string, password string) (string, bool) {
+	// delete(a.Streams, p.Name)
+	a.Name = login
+	s := a.Storage.Session.Copy()
+	defer s.Close()
+	db := s.DB("darklin")
+	n, _ := db.C("players").Find(bson.M{"name": a.Name}).Count()
+	a.State = *new(PlayerState)
+	a.State.New = true
+	a.State.Name = a.Name
+	a.State.Password = password
+	a.State.Room = "first"
+	a.State.HP = 10
+	if n != 0 {
+		db.C("players").Find(bson.M{"name": a.Name}).One(&a.State)
+		a.State.New = false
+	}
+	a.Loggedin = true
+	a.ChangeRoom(WORLD.Rooms[a.State.Room])
+	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
+	go a.Live()
+	// log.Println("success login", blue(tokens[1]))
+	a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, a.Name))
+	return "success", true
+}
+
+//UpdateState - save state into db
+func (a *Player) UpdateState() {
+	s := a.Storage.Session.Copy()
+	defer s.Close()
+	db := s.DB("darklin")
+	db.C("players").Update(bson.M{"name": a.Name}, a.State)
 }
 
 // Live - i need print something
@@ -78,6 +114,8 @@ func (a *Player) ChangeRoom(room *Area) {
 	}
 	a.Streams["room"] = &room.Stream
 	a.Room = room
+	a.State.Room = room.Name
+	go a.UpdateState()
 	room.Players[a] = a.Connection
 	room.Streams[a.Name] = &a.Stream
 	a.BroadcastRoom(ROOMENTER, "Enter into room "+a.Room.Name, a.Name, a.Room)

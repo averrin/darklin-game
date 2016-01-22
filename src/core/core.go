@@ -27,6 +27,7 @@ func main() {
 	session.SetMode(mgo.Monotonic, true)
 
 	gs := NewGlobalStream()
+	WORLD = NewWorld(&gs)
 	// log.Println(gs.Stream)
 	ts := NewTimeStream(&gs.Stream, gs.State.Date)
 	go ts.Live()
