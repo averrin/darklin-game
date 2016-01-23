@@ -28,13 +28,14 @@ type Subscription struct {
 
 // Actor - basic event-driven class
 type Actor struct {
-	Stream        chan *Event
-	Subscriptions []Subscription
-	Streams       map[string]*chan *Event
-	Name          string
-	ID            string
-	Storage       *Storage
-	ProcessEvent  func(event *Event)
+	Stream         chan *Event
+	Subscriptions  []Subscription
+	Streams        map[string]*chan *Event
+	Name           string
+	ID             string
+	Storage        *Storage
+	ProcessEvent   func(event *Event)
+	ProcessCommand func(event *Event)
 }
 
 // NewActor construct new Actor
@@ -46,6 +47,7 @@ func NewActor(name string, gs *chan *Event) *Actor {
 	actor.Name = name
 	actor.Storage = NewStorage()
 	actor.ProcessEvent = actor.ProcessEventAbstract
+	actor.ProcessCommand = actor.ProcessCommandAbstract
 	return actor
 }
 
@@ -94,7 +96,9 @@ func (a *Actor) BroadcastRoom(eventType EventType, payload interface{}, sender s
 // ForwardEvent to new reciever
 func (a Actor) ForwardEvent(reciever string, event *Event) {
 	// defer func() { recover() }()
+	log.Println("event before forwarded", reciever, *a.Streams[reciever])
 	*a.Streams[reciever] <- event
+	log.Println("event forwarded")
 }
 
 // Subscribe on events
@@ -135,3 +139,5 @@ func (a *Actor) Live() {
 func (a *Actor) ProcessEventAbstract(event *Event) {
 	log.Println("Abstract", a.Name, event)
 }
+
+func (a *Actor) ProcessCommandAbstract(event *Event) {}

@@ -59,6 +59,7 @@ func NewGlobalStream() GlobalStream {
 	actor.State.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
 	actor.State.New = true
 	actor.Actor.ProcessEvent = actor.ProcessEvent
+	actor.Actor.ProcessCommand = actor.ProcessCommand
 	if n != 0 {
 		db.C("state").Find(bson.M{}).One(&actor.State)
 		actor.State.New = false
@@ -148,6 +149,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 					if p.Room == room {
 						a.SendEvent(event.Sender, ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
 					} else {
+						log.Println(p.Name, room)
 						p.ChangeRoom(room)
 					}
 				} else {
@@ -166,7 +168,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
 			} else {
 				p := a.GetPlayer(event.Sender)
-				p.ProcessEvent(NewEvent(LOGIN, tokens, "global"))
+				go p.ProcessEvent(NewEvent(LOGIN, tokens, "global"))
 			}
 		}
 		// }()
