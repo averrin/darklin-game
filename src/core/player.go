@@ -34,6 +34,7 @@ func NewPlayer(name string, gs *chan *Event) Player {
 	actor := new(Player)
 	actor.Actor = *a
 	actor.Loggedin = false
+	actor.Actor.ProcessEvent = actor.ProcessEvent
 	return *actor
 }
 
@@ -74,7 +75,7 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
 	go a.Live()
 	// log.Println("success login", blue(tokens[1]))
-	go a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, a.Name))
+	go a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, "global"))
 	return "", a.State.New
 }
 
@@ -137,6 +138,19 @@ func (a *Player) ChangeRoom(room *Area) {
 	a.BroadcastRoom(ROOMENTER, "Enter into room "+a.Room.Name, a.Name, a.Room)
 	if prevRoom != nil {
 		a.Stream <- NewEvent(ROOMCHANGED, fmt.Sprintf("You are here: %v", a.Room.Name), "global")
+	}
+}
+
+func (a *Player) ProcessEvent(event *Event) {
+	switch event.Type {
+	case LOGIN:
+		err, _ := a.Login(event.Payload.([]string)[1], event.Payload.([]string)[2])
+		if err != "" {
+			a.Message(NewEvent(ERROR, err, "global"))
+		} else {
+			a.SendEvent("global", LOGGEDIN, nil)
+			// a.Streams[p.Name] = &p.Stream
+		}
 	}
 }
 

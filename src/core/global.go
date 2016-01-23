@@ -95,6 +95,9 @@ func (a *GlobalStream) ProcessEvent(event *Event) {
 		} else {
 			a.Broadcast(MESSAGE, event.Payload, event.Sender)
 		}
+	case LOGGEDIN:
+		p := a.GetPlayer(event.Sender)
+		a.Streams[p.Name] = &p.Stream
 	case COMMAND:
 		// log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
 		a.ProcessCommand(event)
@@ -163,12 +166,7 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 				player.Message(NewEvent(ERROR, "Пользователь с таким именем уже залогинен", "global"))
 			} else {
 				p := a.GetPlayer(event.Sender)
-				err, _ := p.Login(tokens[1], tokens[2])
-				if err != "" {
-					p.Message(NewEvent(ERROR, err, "global"))
-				} else {
-					a.Streams[p.Name] = &p.Stream
-				}
+				p.ProcessEvent(NewEvent(LOGIN, tokens, "global"))
 			}
 		}
 		// }()
