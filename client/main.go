@@ -136,6 +136,7 @@ func main() {
 			}
 			switch event.Type {
 			case HEARTBEAT:
+			case LIGHT:
 			case SYSTEMMESSAGE:
 				sep := green("|")
 				print(sep+" %s", event.Payload)

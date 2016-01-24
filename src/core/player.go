@@ -14,15 +14,14 @@ import (
 
 // Player just someone who do something
 type Player struct {
-	Actor
+	Character
 	Connection *websocket.Conn
 	State      PlayerState
 	Loggedin   bool
-	Room       *Area
 }
 
-// ConsumeEvent of couse
-func (a *Player) ConsumeEvent(event *Event) {
+// ConsumeEvent of cause
+func (a *Character) ConsumeEvent(event *Event) {
 	a.Stream <- event
 }
 
@@ -131,6 +130,7 @@ func (a *Player) ChangeRoom(room *Area) {
 		delete(a.Room.Streams, a.Name)
 		delete(a.Room.Players, a)
 	}
+	log.Println(a.Streams, room.Stream)
 	a.Streams["room"] = &room.Stream
 	a.Room = room
 	a.State.Room = room.Name
@@ -161,12 +161,6 @@ func (a *Player) ProcessCommand(event *Event) {}
 
 //PlayerState - db saved state
 type PlayerState struct {
-	ID       bson.ObjectId `bson:"_id,omitempty"`
-	Name     string
+	CharState
 	Password string
-
-	Room string
-	HP   int
-
-	New bool
 }

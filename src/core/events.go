@@ -30,6 +30,7 @@ const (
 	ROOMENTER //17
 	ROOMCHANGED
 	SYSTEMMESSAGE
+	LIGHT
 )
 
 // Event is atom of event stream

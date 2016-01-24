@@ -47,7 +47,7 @@ func (a *GlobalStream) GetPlayer(name string) *Player {
 
 // NewGlobalStream constructor
 func NewGlobalStream() GlobalStream {
-	gs := make(chan *Event)
+	gs := make(chan *Event, 100)
 	a := NewArea("global", &gs)
 	actor := new(GlobalStream)
 	actor.Area = a

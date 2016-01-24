@@ -89,6 +89,7 @@ func (a *Area) ProcessCommand(event *Event) {
 				a.State.Light = false
 				go a.Broadcast(SYSTEMMESSAGE, "В комнате погас свет", a.Name)
 			}
+			go a.Broadcast(LIGHT, a.State.Light, a.Name)
 			go a.UpdateState()
 		}
 	default:
