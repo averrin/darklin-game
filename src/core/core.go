@@ -4,10 +4,10 @@ import (
 	"expvar"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"runtime"
 
 	"gopkg.in/mgo.v2"
 )
@@ -42,21 +42,13 @@ func main() {
 
 	port := flag.Int("port", 80, "port for serving")
 	interactive := flag.Bool("interactive", false, "readline mode")
-	debug := flag.Bool("debug", false, "debug mode")
+	// debug := flag.Bool("debug", false, "debug mode")
 	flag.Parse()
 	log.Println(fmt.Sprintf("Serving at :%v", *port))
 	// http.Handle("/", http.FileServer(http.Dir(".")))
 	go http.ListenAndServe(fmt.Sprintf(":%v", *port), nil)
-	if *debug == true {
-		var mem runtime.MemStats
-		runtime.ReadMemStats(&mem)
-		log.Println(mem.Alloc)
-		log.Println(mem.TotalAlloc)
-		log.Println(mem.HeapAlloc)
-		log.Println(mem.HeapSys)
-	}
 	if *interactive == false {
-		// log.SetOutput(ioutil.Discard)
+		log.SetOutput(ioutil.Discard)
 		gs.Live()
 	} else {
 		go gs.Live()

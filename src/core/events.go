@@ -43,12 +43,13 @@ type Event struct {
 	Payload   interface{}
 	Sender    string
 	Delay     time.Duration
+	Every     time.Duration
 	Abort     bool
 }
 
 func (event Event) String() string {
-	return fmt.Sprintf("{Sender: %v; Type: %v; Payload: %v, Delay: %v, Abort: %v, ID: %v}",
-		event.Sender, event.Type, event.Payload, event.Delay, event.Abort, event.ID)
+	return fmt.Sprintf("{Sender: %v; Type: %v; Payload: %v, Abort: %v, ID: '%v', (Delay: %v, Every: %v)}",
+		event.Sender, event.Type, event.Payload, event.Abort, event.ID, event.Delay, event.Every)
 }
 
 // NewEvent constructor

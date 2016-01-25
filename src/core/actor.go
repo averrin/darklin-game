@@ -149,6 +149,16 @@ func (a *Actor) Live() {
 			}()
 			continue
 		}
+		if event.Every != 0 {
+			go func() {
+				for !event.Abort {
+					WORLD.Time.Sleep(event.Every)
+					a.NotifySubscribers(event)
+					a.ProcessEvent(event)
+				}
+			}()
+			continue
+		}
 		// log.Println(a.Name, event)
 		a.NotifySubscribers(event)
 		a.ProcessEvent(event)

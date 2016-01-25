@@ -199,7 +199,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 		p.Connection = c
 		p.Message(NewEvent(CONNECTED, nil, "global"))
 		p.Message(NewEvent(SYSTEMMESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
-		a.Players[&p] = c
+		a.Players[p] = c
 		if err != nil {
 			log.Print("upgrade:", err)
 			return
@@ -214,7 +214,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				go func() {
 					p.Stream <- NewEvent(CLOSE, nil, a.Name)
 				}()
-				delete(a.Players, &p)
+				delete(a.Players, p)
 				delete(a.Streams, p.Name)
 				return
 			}

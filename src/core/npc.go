@@ -35,7 +35,7 @@ func (a *NPC) UpdateState() {
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
-	db.C("npc").Update(bson.M{"name": a.Name}, a.State)
+	db.C("npc").Upsert(bson.M{"name": a.Name}, a.State)
 }
 
 //ChangeRoom - enter to new room
@@ -83,32 +83,46 @@ func NewNPC(name string, gs *chan *Event, room *Area) NPC {
 func NewMik(gs *chan *Event) NPC {
 	room := WORLD.Rooms["first"]
 	mik := NewNPC("Mik Rori", gs, room)
+	mik.ProcessEvent = mik.Mik
+	che := NewEvent(MIK_CHANGEROOM, nil, mik.Name)
+	che.ID = "Mik_change_room"
+	che.Every = 1 * time.Minute
+	go func() {
+		mik.Stream <- che
+	}()
 	return mik
 }
 
-//Live - Mik event loop
-func (a *NPC) Live() {
-	for {
-		event, ok := <-a.Stream
-		if !ok {
-			return
+const (
+	MIK_CHANGEROOM EventType = iota
+)
+
+//Mik - Mik event loop
+func (a *NPC) Mik(event *Event) {
+	switch event.Type {
+	case ROOMENTER:
+		a.SendEvent(event.Sender, MESSAGE, "Эй, кто выключил свет?")
+	case MIK_CHANGEROOM:
+		if a.State.Room == "first" {
+			a.ChangeRoom(WORLD.Rooms["second"])
+		} else {
+			a.ChangeRoom(WORLD.Rooms["first"])
 		}
-		a.NotifySubscribers(event)
-		switch event.Type {
-		case LIGHT:
-			if !event.Payload.(bool) {
-				a.BroadcastRoom(MESSAGE, "Эй, кто выключил свет?", a.Name, a.Room)
-				a.BroadcastRoom(SYSTEMMESSAGE, "*шорох, шаги*", a.Name, a.Room)
-				ne := NewEvent(COMMAND, "light on", a.Name)
-				ne.ID = "Mik_light_on"
-				ne.Delay = 5 * time.Second
-				a.Room.Stream <- ne
+	case LIGHT:
+		if !event.Payload.(bool) {
+			a.BroadcastRoom(MESSAGE, "Эй, кто выключил свет?", a.Name, a.Room)
+			a.BroadcastRoom(SYSTEMMESSAGE, "*шорох, шаги, чирканье спичек*", a.Name, a.Room)
+			ne := NewEvent(COMMAND, "light on", a.Name)
+			ne.ID = "Mik_light_on"
+			ne.Delay = 5 * time.Second
+			a.Room.Stream <- ne
+		} else {
+			ev, ok := a.Room.PendingEvents["Mik_light_on"]
+			if ok {
+				a.BroadcastRoom(MESSAGE, "То-то же!", a.Name, a.Room)
+				ev.Abort = true
 			} else {
-				ev, ok := a.Room.PendingEvents["Mik_light_on"]
-				if ok {
-					a.BroadcastRoom(MESSAGE, "То-то же!", a.Name, a.Room)
-					ev.Abort = true
-				}
+				a.BroadcastRoom(MESSAGE, "Так лучше!", a.Name, a.Room)
 			}
 		}
 	}

@@ -26,7 +26,7 @@ func (a *Character) ConsumeEvent(event *Event) {
 }
 
 // NewPlayer because i, sucj in golang yet
-func NewPlayer(name string, gs *chan *Event) Player {
+func NewPlayer(name string, gs *chan *Event) *Player {
 	// green := color.New(color.FgGreen).SprintFunc()
 	// log.Println("New player: ", green(name))
 	a := NewActor(name, gs)
@@ -35,7 +35,7 @@ func NewPlayer(name string, gs *chan *Event) Player {
 	actor.Loggedin = false
 	actor.Actor.ProcessEvent = actor.ProcessEvent
 	actor.Actor.ProcessCommand = actor.ProcessCommand
-	return *actor
+	return actor
 }
 
 //HashPassword - hash. password.
@@ -88,27 +88,6 @@ func (a *Player) UpdateState() {
 	db.C("players").Update(bson.M{"name": a.Name}, a.State)
 }
 
-// Live - i need print something
-func (a *Player) Live() {
-	for a.Loggedin {
-		event, ok := <-a.Stream
-		if !ok {
-			return
-		}
-		a.NotifySubscribers(event)
-		switch event.Type {
-		case CLOSE:
-			// log.Println("Player", a.Name, "CLOSE")
-			a.Loggedin = false
-			break
-		default:
-			a.Message(event)
-		}
-	}
-	close(a.Stream)
-	log.Println("Exit from Live of " + a.Name)
-}
-
 //Message - send event direct to ws
 func (a *Player) Message(event *Event) {
 	var msg []byte
@@ -144,7 +123,9 @@ func (a *Player) ChangeRoom(room *Area) {
 	}
 }
 
+//ProcessEvent - event handler
 func (a *Player) ProcessEvent(event *Event) {
+	// log.Println(event)
 	switch event.Type {
 	case LOGIN:
 		err, _ := a.Login(event.Payload.([]string)[1], event.Payload.([]string)[2])
@@ -154,9 +135,14 @@ func (a *Player) ProcessEvent(event *Event) {
 			a.SendEvent("global", LOGGEDIN, nil)
 			// a.Streams[p.Name] = &p.Stream
 		}
+	default:
+		if a.Connection != nil {
+			a.Message(event)
+		}
 	}
 }
 
+//ProcessCommand - command handler
 func (a *Player) ProcessCommand(event *Event) {}
 
 //PlayerState - db saved state
