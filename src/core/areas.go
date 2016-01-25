@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -66,7 +67,7 @@ func (a *Area) ProcessCommand(event *Event) {
 	command := strings.ToLower(tokens[0])
 	// log.Println(command)
 	_, ok := a.Streams[event.Sender]
-	log.Println(a.Name + ": Recv command '" + event.Payload.(string) + "' from " + event.Sender)
+	log.Println(fmt.Sprintf("%v: Recv command %s", a.Name, event))
 	if ok == false && command != "login" && event.Sender != "cmd" {
 		log.Println("Discard command " + command + " from " + event.Sender)
 		return
@@ -76,14 +77,14 @@ func (a *Area) ProcessCommand(event *Event) {
 		if len(tokens) == 2 && (tokens[1] == "on" || tokens[1] == "off") {
 			if tokens[1] == "on" {
 				if a.State.Light {
-					go a.Broadcast(SYSTEMMESSAGE, "В комнате уже светло", a.Name)
+					go a.SendEvent(event.Sender, SYSTEMMESSAGE, "В комнате уже светло")
 					return
 				}
 				a.State.Light = true
 				go a.Broadcast(SYSTEMMESSAGE, "В комнате зажегся свет", a.Name)
 			} else {
 				if !a.State.Light {
-					go a.Broadcast(SYSTEMMESSAGE, "В комнате уже темно", a.Name)
+					go a.SendEvent(event.Sender, SYSTEMMESSAGE, "В комнате уже темно")
 					return
 				}
 				a.State.Light = false

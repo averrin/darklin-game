@@ -30,17 +30,8 @@ import (
 // 	Sender    string
 // }
 
-func connect(u url.URL) *websocket.Conn {
-	log.Printf("connecting to %s", u.String())
-
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		// log.Fatal("dial:", err)
-		time.Sleep(5000 * time.Millisecond)
-		return connect(u)
-	}
-	// log.Println("connected")
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+func runInit(c *websocket.Conn) {
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	initPath := path.Join(dir, "init.cmd")
 	if _, err := os.Stat(initPath); err == nil {
 		file, err := os.Open(initPath)
@@ -63,6 +54,18 @@ func connect(u url.URL) *websocket.Conn {
 			log.Fatal(err)
 		}
 	}
+}
+
+func connect(u url.URL) *websocket.Conn {
+	log.Printf("connecting to %s", u.String())
+
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		// log.Fatal("dial:", err)
+		time.Sleep(5000 * time.Millisecond)
+		return connect(u)
+	}
+	// log.Println("connected")
 
 	return c
 }
@@ -146,6 +149,8 @@ func main() {
 			case ERROR:
 				sep := red("!")
 				print(sep+" %s", event.Payload)
+			case CONNECTED:
+				runInit(conn)
 			default:
 				sep := blue(">")
 				// if !strings.HasPrefix(event.Payload.(string), "hi") {

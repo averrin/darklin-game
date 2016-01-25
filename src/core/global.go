@@ -132,7 +132,11 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 			go a.SendEvent("time", PAUSE, nil)
 		}
 	case "time":
-		go a.SendEvent("time", INFO, *a.Streams[event.Sender])
+		if event.Sender == "cmd" {
+			log.Println(fmt.Sprintf("Date: %v", WORLD.Time.Date))
+		} else {
+			go a.SendEvent("time", INFO, *a.Streams[event.Sender])
+		}
 	case "online":
 		log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
 		if event.Sender != "cmd" {
@@ -193,7 +197,8 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 		p.Streams["room"] = &a.Stream
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.Connection = c
-		p.Message(NewEvent(MESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
+		p.Message(NewEvent(CONNECTED, nil, "global"))
+		p.Message(NewEvent(SYSTEMMESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
 		a.Players[&p] = c
 		if err != nil {
 			log.Print("upgrade:", err)

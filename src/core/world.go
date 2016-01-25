@@ -3,6 +3,7 @@ package main
 type World struct {
 	Rooms  map[string]*Area
 	Global *GlobalStream
+	Time   *TimeStream
 }
 
 func NewWorld(gs *GlobalStream) *World {
@@ -15,6 +16,9 @@ func NewWorld(gs *GlobalStream) *World {
 	room2 := NewArea("second", &gs.Stream)
 	go room2.Live()
 	world.Rooms["second"] = &room2
+	world.Time = NewTimeStream(&gs.Stream, gs.State.Date)
+	go world.Time.Live()
+
 	return world
 }
 

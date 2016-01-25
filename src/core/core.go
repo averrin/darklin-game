@@ -29,9 +29,7 @@ func main() {
 	gs := NewGlobalStream()
 	WORLD = NewWorld(&gs)
 	WORLD.InitNPC()
-	// log.Println(gs.Stream)
-	ts := NewTimeStream(&gs.Stream, gs.State.Date)
-	go ts.Live()
+	log.Println(TIME)
 
 	announcer := NewAnnouncer(&gs.Stream)
 	go announcer.Live()
@@ -39,7 +37,7 @@ func main() {
 	// gs.Subscribe(SECOND, announcer)
 	gs.Subscribe(MINUTE, announcer)
 
-	gs.Streams["time"] = &ts.Stream
+	gs.Streams["time"] = &WORLD.Time.Stream
 
 	http.HandleFunc("/ws", gs.GetPlayerHandler())
 

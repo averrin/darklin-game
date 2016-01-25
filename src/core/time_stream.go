@@ -9,7 +9,9 @@ import (
 // TimeStream - ticker
 type TimeStream struct {
 	Actor
-	Date time.Time
+	Date  time.Time
+	Speed int
+	Ticks int
 }
 
 // NewTimeStream constructor
@@ -18,14 +20,14 @@ func NewTimeStream(gs *chan *Event, date time.Time) *TimeStream {
 	actor := new(TimeStream)
 	actor.Actor = *a
 	actor.Date = date
+	actor.Speed = 1
 	return actor
 }
 
 // Live method
 func (a *TimeStream) Live() {
-	k := 1
-	ticks := 0
-	ticker := time.NewTicker(time.Duration(100 * k * int(time.Millisecond)))
+	a.Ticks = 0
+	ticker := time.NewTicker(time.Duration(100 * a.Speed * int(time.Millisecond)))
 	paused := false
 	go func() {
 		for {
@@ -42,17 +44,31 @@ func (a *TimeStream) Live() {
 	}()
 	for _ = range ticker.C {
 		if !paused {
-			a.Date = a.Date.Add(time.Duration(100 * k * int(time.Millisecond)))
+			a.Date = a.Date.Add(time.Duration(100 * a.Speed * int(time.Millisecond)))
 			a.SendEvent("global", TICK, a.Date)
-			// log.Println(ticks, ticks%10)
-			if ticks > 0 && ticks%10 == 0 {
+			if a.Ticks > 0 && a.Ticks%10 == 0 {
 				a.SendEvent("global", SECOND, a.Date)
 			}
-			if ticks > 0 && ticks%600 == 0 {
+			if a.Ticks > 0 && a.Ticks%600 == 0 {
 				a.SendEvent("global", MINUTE, a.Date)
-				ticks = 0
 			}
-			ticks++
+			if a.Ticks > 0 && a.Ticks%(60*600) == 0 {
+				a.SendEvent("global", HOUR, a.Date)
+			}
+			if a.Ticks > 0 && a.Ticks%(60*600*24) == 0 {
+				a.SendEvent("global", DAY, a.Date)
+				a.Ticks = 0
+			}
+			a.Ticks++
 		}
 	}
 }
+
+func (a *TimeStream) Sleep(duration time.Duration) {
+	start := a.Ticks
+	tick := 100 * a.Speed * int(time.Millisecond)
+	for time.Duration(a.Ticks*tick) < time.Duration(start*tick+int(duration)) {
+	}
+}
+
+var TIME *TimeStream

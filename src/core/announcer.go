@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // Announcer just someone who do something
 type Announcer struct {
 	Actor
@@ -25,6 +27,6 @@ func (a Announcer) ProcessEvent(event *Event) {
 	case SECOND:
 		a.SendEvent("global", MESSAGE, "Every second, mister")
 	case MINUTE:
-		a.SendEvent("global", MESSAGE, "Every minute, boss")
+		a.SendEvent("global", MESSAGE, fmt.Sprintf("Игровое время: %v", WORLD.Time.Date))
 	}
 }

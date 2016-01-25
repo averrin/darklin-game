@@ -94,10 +94,17 @@ func (a *NPC) Live() {
 		case LIGHT:
 			if !event.Payload.(bool) {
 				a.BroadcastRoom(MESSAGE, "Эй, кто выключил свет?", a.Name, a.Room)
-				go func() {
-					time.Sleep(5 * time.Second)
-					a.SendEvent("room", COMMAND, "light on")
-				}()
+				a.BroadcastRoom(SYSTEMMESSAGE, "*шорох, шаги*", a.Name, a.Room)
+				ne := NewEvent(COMMAND, "light on", a.Name)
+				ne.ID = "Mik_light_on"
+				ne.Delay = 5 * time.Second
+				a.Room.Stream <- ne
+			} else {
+				ev, ok := a.Room.PendingEvents["Mik_light_on"]
+				if ok {
+					a.BroadcastRoom(MESSAGE, "То-то же!", a.Name, a.Room)
+					ev.Abort = true
+				}
 			}
 		}
 	}

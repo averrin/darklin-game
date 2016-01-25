@@ -28,12 +28,15 @@ type Subscription struct {
 
 // Actor - basic event-driven class
 type Actor struct {
-	Stream         chan *Event
-	Subscriptions  []Subscription
-	Streams        map[string]*chan *Event
-	Name           string
-	ID             string
-	Storage        *Storage
+	Stream        chan *Event
+	Subscriptions []Subscription
+	Streams       map[string]*chan *Event
+	Name          string
+	ID            string
+	Storage       *Storage
+
+	PendingEvents map[string]*Event
+
 	ProcessEvent   func(event *Event)
 	ProcessCommand func(event *Event)
 }
@@ -42,6 +45,7 @@ type Actor struct {
 func NewActor(name string, gs *chan *Event) *Actor {
 	actor := new(Actor)
 	actor.Streams = make(map[string]*chan *Event)
+	actor.PendingEvents = make(map[string]*Event)
 	actor.Streams["global"] = gs
 	actor.Stream = make(chan *Event)
 	actor.Name = name
@@ -128,6 +132,23 @@ func (a *Actor) Live() {
 	for {
 		event := <-a.Stream
 		exp_events_processed.Add(1)
+		if event.Abort {
+			continue
+		}
+		if event.Delay != 0 {
+			if event.ID != "" {
+				a.PendingEvents[event.ID] = event
+			}
+			go func() {
+				WORLD.Time.Sleep(event.Delay)
+				event.Delay = 0
+				if event.ID != "" {
+					delete(a.PendingEvents, event.ID)
+				}
+				a.Stream <- event
+			}()
+			continue
+		}
 		// log.Println(a.Name, event)
 		a.NotifySubscribers(event)
 		a.ProcessEvent(event)
