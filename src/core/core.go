@@ -4,7 +4,6 @@ import (
 	"expvar"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -57,7 +56,7 @@ func main() {
 		log.Println(mem.HeapSys)
 	}
 	if *interactive == false {
-		log.SetOutput(ioutil.Discard)
+		// log.SetOutput(ioutil.Discard)
 		gs.Live()
 	} else {
 		go gs.Live()

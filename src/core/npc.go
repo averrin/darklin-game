@@ -7,6 +7,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+//Character - room-based actor
 type Character struct {
 	Actor
 	Room *Area
@@ -18,6 +19,7 @@ type NPC struct {
 	State CharState
 }
 
+//CharState - Basic state
 type CharState struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`
 	Name string
@@ -77,12 +79,14 @@ func NewNPC(name string, gs *chan *Event, room *Area) NPC {
 	return *actor
 }
 
+//NewMik - nobody likes darkness
 func NewMik(gs *chan *Event) NPC {
 	room := WORLD.Rooms["first"]
 	mik := NewNPC("Mik Rori", gs, room)
 	return mik
 }
 
+//Live - Mik event loop
 func (a *NPC) Live() {
 	for {
 		event, ok := <-a.Stream

@@ -82,6 +82,10 @@ func main() {
 			readline.PcItem("first"),
 			readline.PcItem("second"),
 		),
+		readline.PcItem("light",
+			readline.PcItem("on"),
+			readline.PcItem("off"),
+		),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",
