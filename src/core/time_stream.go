@@ -68,6 +68,7 @@ func (a *TimeStream) Sleep(duration time.Duration) {
 	start := a.Ticks
 	tick := 100 * a.Speed * int(time.Millisecond)
 	for time.Duration(a.Ticks*tick) < time.Duration(start*tick+int(duration)) {
+		time.Sleep(time.Millisecond * 20)
 	}
 }
 
