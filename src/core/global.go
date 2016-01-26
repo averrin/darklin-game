@@ -10,7 +10,7 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"code.google.com/p/go-uuid/uuid"
+	"github.com/pborman/uuid"
 
 	// "golang.org/x/net/websocket"
 	"github.com/gorilla/websocket"
