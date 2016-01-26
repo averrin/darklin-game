@@ -1,60 +1,78 @@
 package main
 
-import (
-	"log"
-	"time"
-)
+import "time"
 
 //NewMik - nobody likes darkness
 func NewMik(gs *chan *Event) NPC {
-	room := WORLD.Rooms["first"]
+	room := WORLD.Rooms["Hall"]
 	mik := NewNPC("Mik Rori", gs, room)
-	mik.ProcessEvent = mik.Mik
+	// mik.ProcessEvent = mik.Mik
+
+	mik.Handlers[ROOMCHANGED] = mik.MikRoomChanged
+	mik.Handlers[ROOMENTER] = mik.MikRoomEnter
+	mik.Handlers[MIK_SMOKE] = mik.MikSmoke
+	mik.Handlers[MIK_CHANGEROOM] = mik.MikChangeRoom
+	mik.Handlers[LIGHT] = mik.MikLight
+
 	che := NewEvent(MIK_CHANGEROOM, nil, mik.Name)
 	che.ID = "Mik_change_room"
-	che.Every = 1 * time.Minute
+	che.Every = 2 * time.Minute
+	cme := NewEvent(MIK_SMOKE, nil, mik.Name)
+	cme.Every = 10 * time.Minute
 	go func() {
 		mik.Stream <- che
+		mik.Stream <- cme
 	}()
 	return mik
 }
 
 const (
 	MIK_CHANGEROOM EventType = iota
+	MIK_SMOKE
 )
 
-//Mik - Mik event loop
-func (a *NPC) Mik(event *Event) {
-	log.Println(event)
-	switch event.Type {
-	case ROOMCHANGED:
-		if !a.Room.State.Light {
-			a.BroadcastRoom(MESSAGE, "И тут темень!", a.Name, a.Room)
-		}
-	case ROOMENTER:
-		a.Room.SendEventWithSender(event.Sender, MESSAGE, "Привет.", a.Name)
-	case MIK_CHANGEROOM:
-		if a.State.Room == "first" {
-			a.ChangeRoom(WORLD.Rooms["second"])
+func (a *NPC) MikRoomChanged(event *Event) bool {
+	if !a.Room.State.Light {
+		a.BroadcastRoom(MESSAGE, "И тут темень!", a.Name, a.Room)
+	}
+	return false
+}
+
+func (a *NPC) MikRoomEnter(event *Event) bool {
+	a.Room.SendEventWithSender(event.Sender, MESSAGE, "Привет.", a.Name)
+	return false
+}
+
+func (a *NPC) MikSmoke(event *Event) bool {
+	a.BroadcastRoom(SYSTEMMESSAGE, "*Мик закуривает трубку*", a.Name, a.Room)
+	return false
+}
+
+func (a *NPC) MikChangeRoom(event *Event) bool {
+	if a.State.Room == "Hall" {
+		a.ChangeRoom(WORLD.Rooms["second"])
+	} else {
+		a.ChangeRoom(WORLD.Rooms["Hall"])
+	}
+	return false
+}
+
+func (a *NPC) MikLight(event *Event) bool {
+	if !event.Payload.(bool) {
+		a.BroadcastRoom(MESSAGE, "Эй, кто выключил свет?", a.Name, a.Room)
+		a.BroadcastRoom(SYSTEMMESSAGE, "*шорох, шаги, чирканье спичек*", a.Name, a.Room)
+		ne := NewEvent(COMMAND, "light on", a.Name)
+		ne.ID = "Mik_light_on"
+		ne.Delay = 5 * time.Second
+		a.Room.Stream <- ne
+	} else {
+		ev, ok := a.Room.PendingEvents["Mik_light_on"]
+		if ok {
+			a.BroadcastRoom(MESSAGE, "То-то же!", a.Name, a.Room)
+			ev.Abort = true
 		} else {
-			a.ChangeRoom(WORLD.Rooms["first"])
-		}
-	case LIGHT:
-		if !event.Payload.(bool) {
-			a.BroadcastRoom(MESSAGE, "Эй, кто выключил свет?", a.Name, a.Room)
-			a.BroadcastRoom(SYSTEMMESSAGE, "*шорох, шаги, чирканье спичек*", a.Name, a.Room)
-			ne := NewEvent(COMMAND, "light on", a.Name)
-			ne.ID = "Mik_light_on"
-			ne.Delay = 5 * time.Second
-			a.Room.Stream <- ne
-		} else {
-			ev, ok := a.Room.PendingEvents["Mik_light_on"]
-			if ok {
-				a.BroadcastRoom(MESSAGE, "То-то же!", a.Name, a.Room)
-				ev.Abort = true
-			} else {
-				a.BroadcastRoom(MESSAGE, "Так лучше!", a.Name, a.Room)
-			}
+			a.BroadcastRoom(MESSAGE, "Так лучше!", a.Name, a.Room)
 		}
 	}
+	return false
 }

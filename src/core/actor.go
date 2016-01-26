@@ -32,8 +32,10 @@ type Actor struct {
 
 	PendingEvents map[string]*Event
 
-	ProcessEvent   func(event *Event)
-	ProcessCommand func(event *Event)
+	Handlers        map[EventType]func(*Event) bool
+	CommandHandlers map[string]func(string) bool
+	ProcessEvent    func(event *Event)
+	ProcessCommand  func(event *Event)
 }
 
 //String func for plain actor
@@ -50,6 +52,8 @@ func NewActor(name string, gs *chan *Event) *Actor {
 	actor.Stream = make(chan *Event)
 	actor.Name = name
 	actor.Storage = NewStorage()
+	actor.Handlers = make(map[EventType]func(*Event) bool)
+	actor.CommandHandlers = make(map[string]func(string) bool)
 	actor.ProcessEvent = actor.ProcessEventAbstract
 	actor.ProcessCommand = actor.ProcessCommandAbstract
 	return actor

@@ -53,13 +53,26 @@ func (a *Area) ProcessEvent(event *Event) {
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	// yellow := formatter.Yellow
+	handler, ok := a.Handlers[event.Type]
 	switch event.Type {
 	case ROOMENTER:
+		if ok {
+			handled := handler(event)
+			if handled {
+				return
+			}
+		}
 		if !a.State.Light {
 			a.SendEvent(event.Sender, SYSTEMMESSAGE, "В комнате темно")
 		}
 		// log.Println(a.Name, event)
 	case COMMAND:
+		if ok {
+			handled := handler(event)
+			if handled {
+				return
+			}
+		}
 		a.ProcessCommand(event)
 	}
 }

@@ -27,7 +27,7 @@ func main() {
 
 	gs := NewGlobalStream()
 	WORLD = NewWorld(&gs)
-	WORLD.InitNPC()
+	WORLD.Init()
 
 	announcer := NewAnnouncer(&gs.Stream)
 	go announcer.Live()

@@ -66,7 +66,7 @@ func (a *Player) Login(login string, password string) (string, bool) {
 		a.State.New = true
 		a.State.Name = login
 		a.State.Password = password
-		a.State.Room = "first"
+		a.State.Room = "Hall"
 		a.State.HP = 10
 	}
 	a.Name = login

@@ -83,3 +83,25 @@ func NewNPC(name string, gs *chan *Event, room *Area) NPC {
 	actor.Room.Streams[actor.Name] = &actor.Stream
 	return *actor
 }
+
+//ProcessEvent from user or cmd
+func (a *NPC) ProcessEvent(event *Event) {
+	// formatter := a.Formatter
+	// blue := formatter.Blue
+	// yellow := formatter.Yellow
+	handler, ok := a.Handlers[event.Type]
+	switch event.Type {
+	case COMMAND:
+		if ok {
+			handled := handler(event)
+			if handled {
+				return
+			}
+		}
+		a.ProcessCommand(event)
+	default:
+		if ok {
+			_ = handler(event)
+		}
+	}
+}
