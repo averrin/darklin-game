@@ -1,7 +1,7 @@
 package main
 
 import (
-	"expvar"
+	core "core"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -12,30 +12,26 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-var (
-	exp_events_processed = expvar.NewInt("events_processed")
-)
-
 func main() {
 	var err error
-	session, err = mgo.Dial("mongo")
+	core.SESSION, err = mgo.Dial("mongo")
 	if err != nil {
 		panic(err)
 	}
-	defer session.Close()
-	session.SetMode(mgo.Monotonic, true)
+	defer core.SESSION.Close()
+	core.SESSION.SetMode(mgo.Monotonic, true)
 
-	gs := NewGlobalStream()
-	WORLD = NewWorld(&gs)
-	WORLD.Init()
+	gs := core.NewGlobalStream()
+	core.WORLD = core.NewWorld(&gs)
+	core.WORLD.Init()
 
-	announcer := NewAnnouncer(&gs.Stream)
+	announcer := core.NewAnnouncer(&gs.Stream)
 	go announcer.Live()
 
 	// gs.Subscribe(SECOND, announcer)
-	gs.Subscribe(MINUTE, &announcer.Actor)
+	gs.Subscribe(core.MINUTE, &announcer.Actor)
 
-	gs.Streams["time"] = &WORLD.Time.Stream
+	gs.Streams["time"] = &core.WORLD.Time.Stream
 
 	http.HandleFunc("/ws", gs.GetPlayerHandler())
 
@@ -51,6 +47,6 @@ func main() {
 		gs.Live()
 	} else {
 		go gs.Live()
-		RunShell(&gs.Stream)
+		core.RunShell(&gs.Stream)
 	}
 }

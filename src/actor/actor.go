@@ -1,13 +1,22 @@
-package main
+package actor
 
-import "log"
+import (
+	"events"
+	"expvar"
+	"log"
+	"world"
+)
+
+var (
+	exp_events_processed = expvar.NewInt("events_processed")
+)
 
 // "fmt"
 
 // Interface - Anybody who can live
 type Interface interface {
 	Live()
-	ProcessEvent(event *Event)
+	ProcessEvent(event *events.Event)
 }
 
 // EventPublisher - can send
@@ -23,20 +32,20 @@ type Subscription struct {
 
 // Actor - basic event-driven class
 type Actor struct {
-	Stream        chan *Event
+	Stream        chan *events.Event
 	Subscriptions []Subscription
-	Streams       map[string]*chan *Event
+	Streams       map[string]*chan *events.Event
 	Name          string
 	ID            string
 	Desc          string
 	Storage       *Storage
 
-	PendingEvents map[string]*Event
+	PendingEvents map[string]*events.Event
 
-	Handlers        map[EventType]func(*Event) bool
+	Handlers        map[EventType]func(*events.Event) bool
 	CommandHandlers map[string]func(string) bool
-	ProcessEvent    func(event *Event)
-	ProcessCommand  func(event *Event)
+	ProcessEvent    func(event *events.Event)
+	ProcessCommand  func(event *events.Event)
 }
 
 //String func for plain actor
@@ -45,15 +54,15 @@ type Actor struct {
 // }
 
 // NewActor construct new Actor
-func NewActor(name string, gs *chan *Event) *Actor {
+func NewActor(name string, gs *chan *events.Event) *Actor {
 	actor := new(Actor)
-	actor.Streams = make(map[string]*chan *Event)
-	actor.PendingEvents = make(map[string]*Event)
+	actor.Streams = make(map[string]*chan *events.Event)
+	actor.PendingEvents = make(map[string]*events.Event)
 	actor.Streams["global"] = gs
-	actor.Stream = make(chan *Event)
+	actor.Stream = make(chan *events.Event)
 	actor.Name = name
 	actor.Storage = NewStorage()
-	actor.Handlers = make(map[EventType]func(*Event) bool)
+	actor.Handlers = make(map[EventType]func(*events.Event) bool)
 	actor.CommandHandlers = make(map[string]func(string) bool)
 	actor.ProcessEvent = actor.ProcessEventAbstract
 	actor.ProcessCommand = actor.ProcessCommandAbstract
@@ -109,7 +118,7 @@ func (a *Actor) BroadcastRoom(eventType EventType, payload interface{}, sender s
 }
 
 // ForwardEvent to new reciever
-func (a Actor) ForwardEvent(reciever string, event *Event) {
+func (a Actor) ForwardEvent(reciever string, event *events.Event) {
 	// defer func() { recover() }()
 	// log.Println("event before forwarded", reciever, *a.Streams[reciever])
 	*a.Streams[reciever] <- event
@@ -122,7 +131,7 @@ func (a *Actor) Subscribe(eventType EventType, subscriber *Actor) {
 }
 
 // NotifySubscribers wgen u have event
-func (a Actor) NotifySubscribers(event *Event) {
+func (a Actor) NotifySubscribers(event *events.Event) {
 	for _, s := range a.Subscriptions {
 		if event.Type == s.Type || s.Type == ALL {
 			s.Subscriber.Stream <- event
@@ -151,7 +160,7 @@ func (a *Actor) Live() {
 				a.PendingEvents[event.ID] = event
 			}
 			go func() {
-				WORLD.Time.Sleep(event.Delay)
+				world.WORLD.Time.Sleep(event.Delay)
 				event.Delay = 0
 				if event.ID != "" {
 					delete(a.PendingEvents, event.ID)
@@ -163,7 +172,7 @@ func (a *Actor) Live() {
 		if event.Every != 0 {
 			go func() {
 				for !event.Abort {
-					WORLD.Time.Sleep(event.Every)
+					world.WORLD.Time.Sleep(event.Every)
 					a.NotifySubscribers(event)
 					a.ProcessEvent(event)
 				}
@@ -178,8 +187,8 @@ func (a *Actor) Live() {
 }
 
 //ProcessEventAbstract - dummy processor
-func (a *Actor) ProcessEventAbstract(event *Event) {
+func (a *Actor) ProcessEventAbstract(event *events.Event) {
 	log.Println("Abstract", a.Name, event)
 }
 
-func (a *Actor) ProcessCommandAbstract(event *Event) {}
+func (a *Actor) ProcessCommandAbstract(event *events.Event) {}

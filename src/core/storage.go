@@ -1,8 +1,8 @@
-package main
+package core
 
 import "gopkg.in/mgo.v2"
 
-var session *mgo.Session
+var SESSION *mgo.Session
 
 //Storage - some db logic
 type Storage struct {
@@ -13,6 +13,6 @@ type Storage struct {
 //NewStorage constructor
 func NewStorage() *Storage {
 	storage := new(Storage)
-	storage.Session = session
+	storage.Session = SESSION
 	return storage
 }

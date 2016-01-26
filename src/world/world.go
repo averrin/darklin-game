@@ -1,17 +1,22 @@
-package main
+package world
 
-import "log"
+import (
+	"area"
+	"core"
+	"log"
+	"rooms"
+)
 
 type World struct {
-	Rooms  map[string]*Area
-	Global *GlobalStream
-	Time   *TimeStream
+	Rooms  map[string]*area.Area
+	Global *core.GlobalStream
+	Time   *core.TimeStream
 }
 
-func NewWorld(gs *GlobalStream) *World {
+func NewWorld(gs *core.GlobalStream) *World {
 	world := new(World)
 	world.Global = gs
-	world.Rooms = make(map[string]*Area)
+	world.Rooms = make(map[string]*area.Area)
 	world.Time = NewTimeStream(&gs.Stream, gs.State.Date)
 	go world.Time.Live()
 
@@ -20,11 +25,11 @@ func NewWorld(gs *GlobalStream) *World {
 
 func (w *World) Init() {
 	gs := w.Global
-	room2 := NewArea("second", &gs.Stream)
+	room2 := area.NewArea("second", &gs.Stream)
 	room2.Desc = "Абстрактная комната, не имеющая индивидуальности."
 	go room2.Live()
 	w.Rooms["second"] = room2
-	hall := NewHall(&gs.Stream)
+	hall := rooms.NewHall(&gs.Stream)
 	log.Println(hall)
 	hall.Init()
 	// room := NewArea("Hall", &gs.Stream)

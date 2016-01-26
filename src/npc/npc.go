@@ -1,7 +1,10 @@
-package main
+package npc
 
 import (
+	"events"
 	"fmt"
+
+	"world"
 
 	"gopkg.in/mgo.v2/bson"
 )
@@ -43,7 +46,7 @@ func (a *NPC) UpdateState() {
 
 //ChangeRoom - enter to new room
 func (a *NPC) ChangeRoom(room *Area) {
-	a.BroadcastRoom(ROOMEXIT, "Покинул комнату", a.Name, a.Room)
+	a.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name, a.Room)
 	delete(a.Room.Streams, a.Name)
 	delete(a.Room.NPCs, a.Name)
 	a.Streams["room"] = &room.Stream
@@ -52,13 +55,13 @@ func (a *NPC) ChangeRoom(room *Area) {
 	go a.UpdateState()
 	room.Streams[a.Name] = &a.Stream
 	room.NPCs[a.Name] = a
-	a.BroadcastRoom(ROOMENTER, "Вошел в комнату", a.Name, a.Room)
-	a.SendEvent("room", ROOMENTER, nil)
-	a.Stream <- NewEvent(ROOMCHANGED, a.Room.Name, "global")
+	a.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name, a.Room)
+	a.SendEvent("room", events.ROOMENTER, nil)
+	a.Stream <- NewEvent(events.ROOMCHANGED, a.Room.Name, "global")
 }
 
 // NewNPC constructor
-func NewNPC(name string, gs *chan *Event, room *Area) NPC {
+func NewNPC(name string, gs *chan *events.Event, room *Area) NPC {
 	a := NewActor(name, gs)
 	actor := new(NPC)
 	actor.Actor = *a
@@ -77,7 +80,7 @@ func NewNPC(name string, gs *chan *Event, room *Area) NPC {
 	if n != 0 {
 		db.C("npc").Find(bson.M{"name": actor.Name}).One(&actor.State)
 		actor.State.New = false
-		actor.Room = WORLD.Rooms[actor.State.Room]
+		actor.Room = world.WORLD.Rooms[actor.State.Room]
 	}
 	actor.Streams["room"] = &actor.Room.Stream
 	actor.Room.Streams[actor.Name] = &actor.Stream
@@ -91,7 +94,7 @@ func (a *NPC) ProcessEvent(event *Event) {
 	// yellow := formatter.Yellow
 	handler, ok := a.Handlers[event.Type]
 	switch event.Type {
-	case COMMAND:
+	case events.COMMAND:
 		if ok {
 			handled := handler(event)
 			if handled {

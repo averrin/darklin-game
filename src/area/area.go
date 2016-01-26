@@ -1,8 +1,12 @@
-package main
+package area
 
 import (
+	"actor"
+	"events"
 	"fmt"
 	"log"
+	"npc"
+	"player"
 	"strings"
 
 	"gopkg.in/mgo.v2/bson"
@@ -12,11 +16,11 @@ import (
 
 //Area - room for players
 type Area struct {
-	Actor
-	Players   map[*Player]*websocket.Conn
+	actor.Actor
+	Players   map[*player.Player]*websocket.Conn
 	Formatter Formatter
 	State     AreaState
-	NPCs      map[string]*NPC
+	NPCs      map[string]*npc.NPC
 }
 
 func (a *Area) String() string {
@@ -25,39 +29,39 @@ func (a *Area) String() string {
 
 // NewArea constructor
 func NewArea(name string, gs *chan *Event) *Area {
-	a := NewActor(name, gs)
-	actor := new(Area)
-	actor.Actor = *a
-	actor.Players = make(map[*Player]*websocket.Conn)
-	actor.NPCs = make(map[string]*NPC)
+	a := actor.NewActor(name, gs)
+	area := new(Area)
+	area.Actor = *a
+	area.Players = make(map[*Player]*websocket.Conn)
+	area.NPCs = make(map[string]*npc.NPC)
 	formatter := NewFormatter()
-	actor.Formatter = formatter
-	actor.Actor.ProcessEvent = actor.ProcessEvent
-	s := actor.Storage.Session.Copy()
+	area.Formatter = formatter
+	area.Actor.ProcessEvent = area.ProcessEvent
+	s := area.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
-	n, _ := db.C("rooms").Find(bson.M{"name": actor.Name}).Count()
-	actor.State = *new(AreaState)
-	actor.State.New = true
-	actor.State.Light = true
-	actor.State.Name = actor.Name
+	n, _ := db.C("rooms").Find(bson.M{"name": area.Name}).Count()
+	area.State = *new(AreaState)
+	area.State.New = true
+	area.State.Light = true
+	area.State.Name = area.Name
 	if n != 0 {
-		db.C("rooms").Find(bson.M{"name": actor.Name}).One(&actor.State)
-		actor.State.New = false
+		db.C("rooms").Find(bson.M{"name": area.Name}).One(&area.State)
+		area.State.New = false
 	}
-	return actor
+	return area
 }
 
 //ProcessEvent from user or cmd
-func (a *Area) ProcessEvent(event *Event) {
+func (a *Area) ProcessEvent(event *events.Event) {
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	// yellow := formatter.Yellow
 	handler, ok := a.Handlers[event.Type]
 	switch event.Type {
-	case DESCRIBE:
-		a.SendEvent(event.Sender, DESCRIBE, a.Desc)
-	case ROOMENTER:
+	case events.DESCRIBE:
+		a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
+	case events.ROOMENTER:
 		if ok {
 			handled := handler(event)
 			if handled {
@@ -65,10 +69,10 @@ func (a *Area) ProcessEvent(event *Event) {
 			}
 		}
 		if !a.State.Light {
-			a.SendEvent(event.Sender, SYSTEMMESSAGE, "В комнате темно")
+			a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате темно")
 		}
 		// log.Println(a.Name, event)
-	case COMMAND:
+	case events.COMMAND:
 		if ok {
 			handled := handler(event)
 			if handled {
@@ -84,7 +88,7 @@ func (a *Area) ProcessEvent(event *Event) {
 }
 
 //ProcessCommand from user or cmd
-func (a *Area) ProcessCommand(event *Event) {
+func (a *Area) ProcessCommand(event *events.Event) {
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	tokens := strings.Split(event.Payload.(string), " ")
@@ -100,32 +104,32 @@ func (a *Area) ProcessCommand(event *Event) {
 	switch command {
 	case "describe":
 		if tokens[1] == "room" {
-			a.SendEvent(event.Sender, DESCRIBE, a.Desc)
+			a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
 		}
 	case "light":
 		if len(tokens) == 2 && (tokens[1] == "on" || tokens[1] == "off") {
 			if tokens[1] == "on" {
 				if a.State.Light {
-					go a.SendEvent(event.Sender, SYSTEMMESSAGE, "В комнате уже светло")
+					go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате уже светло")
 					return
 				}
 				a.State.Light = true
-				go a.Broadcast(SYSTEMMESSAGE, "В комнате зажегся свет", a.Name)
+				go a.Broadcast(events.SYSTEMMESSAGE, "В комнате зажегся свет", a.Name)
 			} else {
 				if !a.State.Light {
-					go a.SendEvent(event.Sender, SYSTEMMESSAGE, "В комнате уже темно")
+					go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате уже темно")
 					return
 				}
 				a.State.Light = false
-				go a.Broadcast(SYSTEMMESSAGE, "В комнате погас свет", a.Name)
+				go a.Broadcast(events.SYSTEMMESSAGE, "В комнате погас свет", a.Name)
 			}
-			go func() { a.Stream <- NewEvent(LIGHT, a.State.Light, event.Sender) }()
-			go a.Broadcast(LIGHT, a.State.Light, a.Name)
+			go func() { a.Stream <- NewEvent(events.LIGHT, a.State.Light, event.Sender) }()
+			go a.Broadcast(events.LIGHT, a.State.Light, a.Name)
 			go a.UpdateState()
 		}
 	default:
 		if strings.HasPrefix(command, "/") {
-			a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
+			a.Broadcast(events.MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
 		} else {
 			// log.Println(a.Name, "forward", event)
 			a.ForwardEvent("global", event)

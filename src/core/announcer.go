@@ -1,4 +1,4 @@
-package main
+package core
 
 import "fmt"
 
@@ -14,7 +14,7 @@ func (a Announcer) ConsumeEvent(event *Event) {
 
 // NewAnnouncer because i, sucj in golang yet
 func NewAnnouncer(gs *chan *Event) *Announcer {
-	a := NewActor("Announcer", gs)
+	a := actor.NewActor("Announcer", gs)
 	actor := new(Announcer)
 	actor.Actor = *a
 	actor.Actor.ProcessEvent = actor.ProcessEvent
@@ -27,6 +27,6 @@ func (a Announcer) ProcessEvent(event *Event) {
 	case SECOND:
 		a.SendEvent("global", MESSAGE, "Every second, mister")
 	case MINUTE:
-		a.SendEvent("global", MESSAGE, fmt.Sprintf("Игровое время: %v", WORLD.Time.Date.Format("Mon Jan _2 15:04:05 2006")))
+		a.SendEvent("global", MESSAGE, fmt.Sprintf("Игровое время: %v", world.WORLD.Time.Date.Format("Mon Jan _2 15:04:05 2006")))
 	}
 }

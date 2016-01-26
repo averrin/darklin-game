@@ -1,4 +1,4 @@
-package main
+package core
 
 import "time"
 
@@ -14,7 +14,7 @@ type TimeStream struct {
 
 // NewTimeStream constructor
 func NewTimeStream(gs *chan *Event, date time.Time) *TimeStream {
-	a := NewActor("time", gs)
+	a := actor.NewActor("time", gs)
 	actor := new(TimeStream)
 	actor.Actor = *a
 	actor.Date = date

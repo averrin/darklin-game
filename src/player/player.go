@@ -1,4 +1,4 @@
-package main
+package player
 
 import (
 	"crypto/sha256"
@@ -7,6 +7,8 @@ import (
 	"log"
 
 	"gopkg.in/mgo.v2/bson"
+
+	"world"
 
 	"github.com/gorilla/websocket"
 	"github.com/ugorji/go/codec"
@@ -29,7 +31,7 @@ func (a *Character) ConsumeEvent(event *Event) {
 func NewPlayer(name string, gs *chan *Event) *Player {
 	// green := color.New(color.FgGreen).SprintFunc()
 	// log.Println("New player: ", green(name))
-	a := NewActor(name, gs)
+	a := actor.NewActor(name, gs)
 	actor := new(Player)
 	actor.Actor = *a
 	actor.Loggedin = false
@@ -72,7 +74,7 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	a.Name = login
 	a.Loggedin = true
 	go a.Live()
-	a.ChangeRoom(WORLD.Rooms[a.State.Room])
+	a.ChangeRoom(world.WORLD.Rooms[a.State.Room])
 	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
 	// log.Println("success login", blue(tokens[1]))
 	go a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, "global"))
