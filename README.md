@@ -1,4 +1,4 @@
-# Darklin
+# Darklin ![Codeship status](https://codeship.com/projects/d7bda440-9dbf-0133-361c-1a74f7994c2d/status?branch=master)
 
 Очередная попытка изучения Go путем написания чего-то вроде игры, что-то вроде ММО.
 
