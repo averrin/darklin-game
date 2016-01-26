@@ -74,6 +74,10 @@ func (a *Area) ProcessEvent(event *Event) {
 			}
 		}
 		a.ProcessCommand(event)
+	default:
+		if ok {
+			_ = handler(event)
+		}
 	}
 }
 
@@ -109,6 +113,7 @@ func (a *Area) ProcessCommand(event *Event) {
 				a.State.Light = false
 				go a.Broadcast(SYSTEMMESSAGE, "В комнате погас свет", a.Name)
 			}
+			go func() { a.Stream <- NewEvent(LIGHT, a.State.Light, event.Sender) }()
 			go a.Broadcast(LIGHT, a.State.Light, a.Name)
 			go a.UpdateState()
 		}
