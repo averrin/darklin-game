@@ -3,8 +3,6 @@ package world
 import (
 	"area"
 	"core"
-	"log"
-	"rooms"
 )
 
 type World struct {
@@ -16,6 +14,7 @@ type World struct {
 func NewWorld(gs *core.GlobalStream) *World {
 	world := new(World)
 	world.Global = gs
+	gs.World = world
 	world.Rooms = make(map[string]*area.Area)
 	world.Time = NewTimeStream(&gs.Stream, gs.State.Date)
 	go world.Time.Live()
@@ -30,11 +29,12 @@ func (w *World) Init() {
 	go room2.Live()
 	w.Rooms["second"] = room2
 	hall := rooms.NewHall(&gs.Stream)
-	log.Println(hall)
 	hall.Init()
-	// room := NewArea("Hall", &gs.Stream)
-	// go room.Live()
-	// world.Rooms["Hall"] = &hall
+	announcer := core.NewAnnouncer(&gs.Stream)
+	go announcer.Live()
+
+	// gs.Subscribe(SECOND, announcer)
+	gs.Subscribe(events.MINUTE, &announcer.Actor)
 }
 
 var WORLD *World

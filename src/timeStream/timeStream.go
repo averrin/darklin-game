@@ -1,25 +1,27 @@
-package core
+package timeStream
 
 import "time"
+import "events"
+import "actor"
 
 // "fmt"
 
 // TimeStream - ticker
 type TimeStream struct {
-	Actor
+	actor.Actor
 	Date  time.Time
 	Speed int
 	Ticks int
 }
 
 // NewTimeStream constructor
-func NewTimeStream(gs *chan *Event, date time.Time) *TimeStream {
+func NewTimeStream(gs *chan *events.Event, date time.Time) *TimeStream {
 	a := actor.NewActor("time", gs)
-	actor := new(TimeStream)
-	actor.Actor = *a
-	actor.Date = date
-	actor.Speed = 1
-	return actor
+	stream := new(TimeStream)
+	stream.Actor = *a
+	stream.Date = date
+	stream.Speed = 1
+	return stream
 }
 
 // Live method
@@ -31,11 +33,11 @@ func (a *TimeStream) Live() {
 		for {
 			event := <-a.Stream
 			switch event.Type {
-			case INFO:
-				event.Payload.(chan *Event) <- NewEvent(SYSTEMMESSAGE, a.Date.Format("Mon Jan _2 15:04:05 2006"), "time")
-			case RESET:
+			case events.INFO:
+				event.Payload.(chan *Event) <- NewEvent(events.SYSTEMMESSAGE, a.Date.Format("Mon Jan _2 15:04:05 2006"), "time")
+			case events.RESET:
 				a.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
-			case PAUSE:
+			case events.PAUSE:
 				paused = true
 			}
 		}
@@ -43,18 +45,18 @@ func (a *TimeStream) Live() {
 	for _ = range ticker.C {
 		if !paused {
 			a.Date = a.Date.Add(time.Duration(100 * a.Speed * int(time.Millisecond)))
-			a.SendEvent("global", TICK, a.Date)
+			a.SendEvent("global", events.TICK, a.Date)
 			if a.Ticks > 0 && a.Ticks%10 == 0 {
-				a.SendEvent("global", SECOND, a.Date)
+				a.SendEvent("global", events.SECOND, a.Date)
 			}
 			if a.Ticks > 0 && a.Ticks%600 == 0 {
-				a.SendEvent("global", MINUTE, a.Date)
+				a.SendEvent("global", events.MINUTE, a.Date)
 			}
 			if a.Ticks > 0 && a.Ticks%(60*600) == 0 {
-				a.SendEvent("global", HOUR, a.Date)
+				a.SendEvent("global", events.HOUR, a.Date)
 			}
 			if a.Ticks > 0 && a.Ticks%(60*600*24) == 0 {
-				a.SendEvent("global", DAY, a.Date)
+				a.SendEvent("global", events.DAY, a.Date)
 				a.Ticks = 0
 			}
 			a.Ticks++

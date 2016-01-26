@@ -1,10 +1,11 @@
 package actor
 
 import (
+	"core"
 	"events"
 	"expvar"
 	"log"
-	"world"
+	"time"
 )
 
 var (
@@ -21,12 +22,12 @@ type Interface interface {
 
 // EventPublisher - can send
 type EventPublisher interface {
-	SendEvent(EventType, interface{})
+	SendEvent(events.EventType, interface{})
 }
 
 // Subscription on events
 type Subscription struct {
-	Type       EventType
+	Type       events.EventType
 	Subscriber *Actor
 }
 
@@ -38,11 +39,12 @@ type Actor struct {
 	Name          string
 	ID            string
 	Desc          string
-	Storage       *Storage
+	Storage       *core.Storage
+	World         *interface{}
 
 	PendingEvents map[string]*events.Event
 
-	Handlers        map[EventType]func(*events.Event) bool
+	Handlers        map[events.EventType]func(*events.Event) bool
 	CommandHandlers map[string]func(string) bool
 	ProcessEvent    func(event *events.Event)
 	ProcessCommand  func(event *events.Event)
@@ -61,8 +63,8 @@ func NewActor(name string, gs *chan *events.Event) *Actor {
 	actor.Streams["global"] = gs
 	actor.Stream = make(chan *events.Event)
 	actor.Name = name
-	actor.Storage = NewStorage()
-	actor.Handlers = make(map[EventType]func(*events.Event) bool)
+	actor.Storage = core.NewStorage()
+	actor.Handlers = make(map[events.EventType]func(*events.Event) bool)
 	actor.CommandHandlers = make(map[string]func(string) bool)
 	actor.ProcessEvent = actor.ProcessEventAbstract
 	actor.ProcessCommand = actor.ProcessCommandAbstract
@@ -70,22 +72,22 @@ func NewActor(name string, gs *chan *events.Event) *Actor {
 }
 
 // SendEvent with type and payload
-func (a Actor) SendEvent(reciever string, eventType EventType, payload interface{}) {
-	event := NewEvent(eventType, payload, a.Name)
+func (a Actor) SendEvent(reciever string, eventType events.EventType, payload interface{}) {
+	event := events.NewEvent(eventType, payload, a.Name)
 	stream := a.Streams[reciever]
 	*stream <- event
 }
 
 // SendEventWithSender - fake sender
-func (a Actor) SendEventWithSender(reciever string, eventType EventType, payload interface{}, sender string) {
-	event := NewEvent(eventType, payload, sender)
+func (a Actor) SendEventWithSender(reciever string, eventType events.EventType, payload interface{}, sender string) {
+	event := events.NewEvent(eventType, payload, sender)
 	stream := a.Streams[reciever]
 	*stream <- event
 }
 
 // Broadcast - send all
-func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string) {
-	event := NewEvent(eventType, payload, sender)
+func (a Actor) Broadcast(eventType events.EventType, payload interface{}, sender string) {
+	event := events.NewEvent(eventType, payload, sender)
 	defer func() { recover() }()
 	// yellow := color.New(color.FgYellow).SprintFunc()
 	// if event.Type != HEARTBEAT {
@@ -99,24 +101,6 @@ func (a Actor) Broadcast(eventType EventType, payload interface{}, sender string
 	}
 }
 
-// BroadcastRoom - send all
-func (a *Actor) BroadcastRoom(eventType EventType, payload interface{}, sender string, room *Area) {
-	event := NewEvent(eventType, payload, sender)
-	defer func() { recover() }()
-	for p := range room.Players {
-		if p.Name == sender {
-			continue
-		}
-		p.Stream <- event
-	}
-	for name, npc := range room.NPCs {
-		if name == sender {
-			continue
-		}
-		npc.Stream <- event
-	}
-}
-
 // ForwardEvent to new reciever
 func (a Actor) ForwardEvent(reciever string, event *events.Event) {
 	// defer func() { recover() }()
@@ -126,14 +110,14 @@ func (a Actor) ForwardEvent(reciever string, event *events.Event) {
 }
 
 // Subscribe on events
-func (a *Actor) Subscribe(eventType EventType, subscriber *Actor) {
+func (a *Actor) Subscribe(eventType events.EventType, subscriber *Actor) {
 	a.Subscriptions = append(a.Subscriptions, Subscription{eventType, subscriber})
 }
 
 // NotifySubscribers wgen u have event
 func (a Actor) NotifySubscribers(event *events.Event) {
 	for _, s := range a.Subscriptions {
-		if event.Type == s.Type || s.Type == ALL {
+		if event.Type == s.Type || s.Type == events.ALL {
 			s.Subscriber.Stream <- event
 		}
 	}
@@ -160,7 +144,7 @@ func (a *Actor) Live() {
 				a.PendingEvents[event.ID] = event
 			}
 			go func() {
-				world.WORLD.Time.Sleep(event.Delay)
+				a.Sleep(event.Delay)
 				event.Delay = 0
 				if event.ID != "" {
 					delete(a.PendingEvents, event.ID)
@@ -172,7 +156,7 @@ func (a *Actor) Live() {
 		if event.Every != 0 {
 			go func() {
 				for !event.Abort {
-					world.WORLD.Time.Sleep(event.Every)
+					a.Sleep(event.Every)
 					a.NotifySubscribers(event)
 					a.ProcessEvent(event)
 				}
@@ -192,3 +176,6 @@ func (a *Actor) ProcessEventAbstract(event *events.Event) {
 }
 
 func (a *Actor) ProcessCommandAbstract(event *events.Event) {}
+func (a *Actor) Sleep(duration time.Duration) {
+	log.Fatal("Fix it")
+}

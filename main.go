@@ -4,6 +4,7 @@ import (
 	core "core"
 	"flag"
 	"fmt"
+	"globalStream"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -21,17 +22,11 @@ func main() {
 	defer core.SESSION.Close()
 	core.SESSION.SetMode(mgo.Monotonic, true)
 
-	gs := core.NewGlobalStream()
-	core.WORLD = core.NewWorld(&gs)
-	core.WORLD.Init()
+	gs := globalStream.NewGlobalStream()
+	world.WORLD = world.NewWorld(&gs)
+	world.WORLD.Init()
 
-	announcer := core.NewAnnouncer(&gs.Stream)
-	go announcer.Live()
-
-	// gs.Subscribe(SECOND, announcer)
-	gs.Subscribe(core.MINUTE, &announcer.Actor)
-
-	gs.Streams["time"] = &core.WORLD.Time.Stream
+	gs.Streams["time"] = &world.WORLD.Time.Stream
 
 	http.HandleFunc("/ws", gs.GetPlayerHandler())
 

@@ -1,13 +1,14 @@
 package core
 
 import (
+	"events"
 	"log"
 
 	"gopkg.in/readline.v1"
 )
 
 // RunShell - interactive mode
-func RunShell(stream *chan *Event) {
+func RunShell(stream *chan *events.Event) {
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("time"),
 		readline.PcItem("exit"),
@@ -37,6 +38,6 @@ func RunShell(stream *chan *Event) {
 			continue
 		}
 		println("<< ", line)
-		*stream <- NewEvent(COMMAND, line, "cmd")
+		*stream <- events.NewEvent(events.COMMAND, line, "cmd")
 	}
 }

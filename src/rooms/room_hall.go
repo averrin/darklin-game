@@ -1,13 +1,12 @@
 package rooms
 
 import (
-	"area"
 	"events"
 	"npc"
 	"world"
 )
 
-func NewHall(gs *chan *events.Event) *area.Area {
+func NewHall(gs *chan *events.Event) *Area {
 	hall := area.NewArea("Hall", gs)
 	world.WORLD.Rooms["Hall"] = hall
 	hall.Desc = "Это холл. Большая, светлая комната."
@@ -19,12 +18,12 @@ func NewHall(gs *chan *events.Event) *area.Area {
 	return hall
 }
 
-func (a *area.Area) Init() {
+func (a *Area) Init() {
 	mik := npc.NewMik(&world.WORLD.Global.Stream)
 	go mik.Live()
 }
 
-func (a *area.Area) HallLight(event *events.Event) bool {
+func (a *Area) HallLight(event *events.Event) bool {
 	if !event.Payload.(bool) {
 		a.BroadcastRoom(events.SYSTEMMESSAGE, "Стало как-то неуютно", a.Name, a)
 	}

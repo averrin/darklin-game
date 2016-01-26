@@ -1,14 +1,15 @@
 package player
 
 import (
+	"actor"
+	"area"
 	"crypto/sha256"
 	"encoding/hex"
+	"events"
 	"fmt"
 	"log"
 
 	"gopkg.in/mgo.v2/bson"
-
-	"world"
 
 	"github.com/gorilla/websocket"
 	"github.com/ugorji/go/codec"
@@ -16,19 +17,20 @@ import (
 
 // Player just someone who do something
 type Player struct {
-	Character
+	actor.Actor
+	Room       *area.Area
 	Connection *websocket.Conn
 	State      PlayerState
 	Loggedin   bool
 }
 
 // ConsumeEvent of cause
-func (a *Character) ConsumeEvent(event *Event) {
+func (a *Player) ConsumeEvent(event *events.Event) {
 	a.Stream <- event
 }
 
 // NewPlayer because i, sucj in golang yet
-func NewPlayer(name string, gs *chan *Event) *Player {
+func NewPlayer(name string, gs *chan *events.Event) *Player {
 	// green := color.New(color.FgGreen).SprintFunc()
 	// log.Println("New player: ", green(name))
 	a := actor.NewActor(name, gs)
@@ -77,7 +79,7 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	a.ChangeRoom(world.WORLD.Rooms[a.State.Room])
 	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
 	// log.Println("success login", blue(tokens[1]))
-	go a.Message(NewEvent(LOGGEDIN, "Вы вошли как: "+a.Name, "global"))
+	go a.Message(events.NewEvent(events.LOGGEDIN, "Вы вошли как: "+a.Name, "global"))
 	return "", a.State.New
 }
 
@@ -90,7 +92,7 @@ func (a *Player) UpdateState() {
 }
 
 //Message - send event direct to ws
-func (a *Player) Message(event *Event) {
+func (a *Player) Message(event *events.Event) {
 	var msg []byte
 	// var b []byte
 	var mh codec.MsgpackHandle
@@ -106,7 +108,7 @@ func (a *Player) Message(event *Event) {
 func (a *Player) ChangeRoom(room *Area) {
 	prevRoom := a.Room
 	if prevRoom != nil {
-		a.BroadcastRoom(ROOMEXIT, "Покинул комнату", a.Name, a.Room)
+		a.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name, a.Room)
 		delete(a.Room.Streams, a.Name)
 		delete(a.Room.Players, a)
 	}
@@ -116,23 +118,23 @@ func (a *Player) ChangeRoom(room *Area) {
 	go a.UpdateState()
 	room.Players[a] = a.Connection
 	room.Streams[a.Name] = &a.Stream
-	a.BroadcastRoom(ROOMENTER, "Вошел в комнату", a.Name, a.Room)
-	a.SendEvent("room", ROOMENTER, nil)
+	a.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name, a.Room)
+	a.SendEvent("room", events.ROOMENTER, nil)
 	if prevRoom != nil {
-		a.Stream <- NewEvent(ROOMCHANGED, fmt.Sprintf("Вы здесь: %v", a.Room.Name), "global")
+		a.Stream <- events.NewEvent(events.ROOMCHANGED, fmt.Sprintf("Вы здесь: %v", a.Room.Name), "global")
 	}
 }
 
 //ProcessEvent - event handler
-func (a *Player) ProcessEvent(event *Event) {
+func (a *Player) ProcessEvent(event *events.Event) {
 	// log.Println(event)
 	switch event.Type {
-	case LOGIN:
+	case events.LOGIN:
 		err, _ := a.Login(event.Payload.([]string)[1], event.Payload.([]string)[2])
 		if err != "" {
-			a.Message(NewEvent(ERROR, err, "global"))
+			a.Message(events.NewEvent(events.ERROR, err, "global"))
 		} else {
-			a.SendEvent("global", LOGGEDIN, nil)
+			a.SendEvent("global", events.LOGGEDIN, nil)
 			// a.Streams[p.Name] = &p.Stream
 		}
 	default:
@@ -143,10 +145,16 @@ func (a *Player) ProcessEvent(event *Event) {
 }
 
 //ProcessCommand - command handler
-func (a *Player) ProcessCommand(event *Event) {}
+func (a *Player) ProcessCommand(event *events.Event) {}
 
 //PlayerState - db saved state
 type PlayerState struct {
-	CharState
+	ID   bson.ObjectId `bson:"_id,omitempty"`
+	Name string
+
+	Room string
+	HP   int
+
+	New      bool
 	Password string
 }

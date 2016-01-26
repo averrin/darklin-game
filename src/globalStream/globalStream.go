@@ -1,10 +1,11 @@
-package core
+package globalStream
 
 import (
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"rooms"
 	"strings"
 	"time"
 
@@ -31,24 +32,15 @@ type GlobalState struct {
 
 // GlobalStream for global events
 type GlobalStream struct {
-	Area
+	area.Area
 	State GlobalState
-}
-
-//GetPlayer by name
-func (a *GlobalStream) GetPlayer(name string) *Player {
-	for v := range a.Players {
-		if v.Name == name {
-			return v
-		}
-	}
-	return &Player{}
+	World *world.World
 }
 
 // NewGlobalStream constructor
 func NewGlobalStream() GlobalStream {
 	gs := make(chan *events.Event, 100)
-	a := NewArea("global", &gs)
+	a :=area.NewArea("global", &gs)
 	stream := new(GlobalStream)
 	stream.Area = *a
 	s := stream.Storage.Session.Copy()

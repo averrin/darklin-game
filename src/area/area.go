@@ -5,7 +5,6 @@ import (
 	"events"
 	"fmt"
 	"log"
-	"npc"
 	"player"
 	"strings"
 
@@ -20,34 +19,28 @@ type Area struct {
 	Players   map[*player.Player]*websocket.Conn
 	Formatter Formatter
 	State     AreaState
-	NPCs      map[string]*npc.NPC
 }
 
-func (a *Area) String() string {
-	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d}", a.Name, len(a.Players), len(a.NPCs))
-}
-
-// NewArea constructor
-func NewArea(name string, gs *chan *Event) *Area {
+//area.NewArea constructor
+funcarea.NewArea(name string, gs *chan *Event) *Area {
 	a := actor.NewActor(name, gs)
 	area := new(Area)
-	area.Actor = *a
-	area.Players = make(map[*Player]*websocket.Conn)
-	area.NPCs = make(map[string]*npc.NPC)
+	rooms.Actor = *a
+	rooms.Players = make(map[*Player]*websocket.Conn)
 	formatter := NewFormatter()
-	area.Formatter = formatter
-	area.Actor.ProcessEvent = area.ProcessEvent
-	s := area.Storage.Session.Copy()
+	rooms.Formatter = formatter
+	rooms.Actor.ProcessEvent = rooms.ProcessEvent
+	s := rooms.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
-	n, _ := db.C("rooms").Find(bson.M{"name": area.Name}).Count()
-	area.State = *new(AreaState)
-	area.State.New = true
-	area.State.Light = true
-	area.State.Name = area.Name
+	n, _ := db.C("rooms").Find(bson.M{"name": rooms.Name}).Count()
+	rooms.State = *new(AreaState)
+	rooms.State.New = true
+	rooms.State.Light = true
+	rooms.State.Name = rooms.Name
 	if n != 0 {
-		db.C("rooms").Find(bson.M{"name": area.Name}).One(&area.State)
-		area.State.New = false
+		db.C("rooms").Find(bson.M{"name": rooms.Name}).One(&rooms.State)
+		rooms.State.New = false
 	}
 	return area
 }
@@ -154,4 +147,32 @@ type AreaState struct {
 	Light bool
 
 	New bool
+}
+
+//GetPlayer by name
+func (a *Area) GetPlayer(name string) *player.Player {
+	for v := range a.Players {
+		if v.Name == name {
+			return v
+		}
+	}
+	return &Player{}
+}
+
+// BroadcastRoom - send all
+func (a *Area) BroadcastRoom(eventType events.EventType, payload interface{}, sender string) {
+	event := events.NewEvent(eventType, payload, sender)
+	defer func() { recover() }()
+	for p := range a.Players {
+		if p.Name == sender {
+			continue
+		}
+		p.Stream <- event
+	}
+	for name, npc := range a.NPCs {
+		if name == sender {
+			continue
+		}
+		npc.Stream <- event
+	}
 }
