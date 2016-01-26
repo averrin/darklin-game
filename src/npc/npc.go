@@ -4,15 +4,14 @@ import (
 	"events"
 	"fmt"
 
-	"world"
-
 	"gopkg.in/mgo.v2/bson"
 )
 
 //Character - room-based actor
 type Character struct {
 	Actor
-	Room *Area
+	Room  *Area
+	World *WorldInterface
 }
 
 func (a *Character) String() string {
@@ -80,7 +79,7 @@ func NewNPC(name string, gs *chan *events.Event, room *Area) NPC {
 	if n != 0 {
 		db.C("npc").Find(bson.M{"name": actor.Name}).One(&actor.State)
 		actor.State.New = false
-		actor.Room = world.WORLD.Rooms[actor.State.Room]
+		actor.Room = actor.World.GetRoom(actor.State.Room)
 	}
 	actor.Streams["room"] = &actor.Room.Stream
 	actor.Room.Streams[actor.Name] = &actor.Stream

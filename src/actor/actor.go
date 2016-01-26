@@ -31,6 +31,14 @@ type Subscription struct {
 	Subscriber *Actor
 }
 
+type WorldInterface interface {
+	GetRoom(string) (*RoomInterface, bool)
+}
+
+type RoomInterface interface {
+	BroadcastRoom(events.EventType, interface{}, string)
+}
+
 // Actor - basic event-driven class
 type Actor struct {
 	Stream        chan *events.Event
@@ -40,7 +48,7 @@ type Actor struct {
 	ID            string
 	Desc          string
 	Storage       *core.Storage
-	World         *interface{}
+	World         *WorldInterface
 
 	PendingEvents map[string]*events.Event
 

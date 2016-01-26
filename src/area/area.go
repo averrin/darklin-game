@@ -2,10 +2,10 @@ package area
 
 import (
 	"actor"
+	"core"
 	"events"
 	"fmt"
 	"log"
-	"player"
 	"strings"
 
 	"gopkg.in/mgo.v2/bson"
@@ -16,31 +16,41 @@ import (
 //Area - room for players
 type Area struct {
 	actor.Actor
-	Players   map[*player.Player]*websocket.Conn
-	Formatter Formatter
+	Players   map[*PlayerInterface]*websocket.Conn
+	Formatter core.Formatter
 	State     AreaState
 }
 
+type PlayerInterface interface {
+	Live()
+	GetName() string
+	GetStream() *chan *events.Event
+	GetRoom() *actor.RoomInterface
+	ChangeRoom(*actor.RoomInterface)
+	Message(*events.Event)
+	ProcessEvent(*events.Event)
+}
+
 //area.NewArea constructor
-funcarea.NewArea(name string, gs *chan *Event) *Area {
+func NewArea(name string, gs *chan *events.Event) *Area {
 	a := actor.NewActor(name, gs)
 	area := new(Area)
-	rooms.Actor = *a
-	rooms.Players = make(map[*Player]*websocket.Conn)
-	formatter := NewFormatter()
-	rooms.Formatter = formatter
-	rooms.Actor.ProcessEvent = rooms.ProcessEvent
-	s := rooms.Storage.Session.Copy()
+	area.Actor = *a
+	area.Players = make(map[*PlayerInterface]*websocket.Conn)
+	formatter := core.NewFormatter()
+	area.Formatter = formatter
+	area.Actor.ProcessEvent = area.ProcessEvent
+	s := area.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
-	n, _ := db.C("rooms").Find(bson.M{"name": rooms.Name}).Count()
-	rooms.State = *new(AreaState)
-	rooms.State.New = true
-	rooms.State.Light = true
-	rooms.State.Name = rooms.Name
+	n, _ := db.C("rooms").Find(bson.M{"name": area.Name}).Count()
+	area.State = *new(AreaState)
+	area.State.New = true
+	area.State.Light = true
+	area.State.Name = area.Name
 	if n != 0 {
-		db.C("rooms").Find(bson.M{"name": rooms.Name}).One(&rooms.State)
-		rooms.State.New = false
+		db.C("rooms").Find(bson.M{"name": area.Name}).One(&area.State)
+		area.State.New = false
 	}
 	return area
 }
@@ -116,7 +126,7 @@ func (a *Area) ProcessCommand(event *events.Event) {
 				a.State.Light = false
 				go a.Broadcast(events.SYSTEMMESSAGE, "В комнате погас свет", a.Name)
 			}
-			go func() { a.Stream <- NewEvent(events.LIGHT, a.State.Light, event.Sender) }()
+			go func() { a.Stream <- events.NewEvent(events.LIGHT, a.State.Light, event.Sender) }()
 			go a.Broadcast(events.LIGHT, a.State.Light, a.Name)
 			go a.UpdateState()
 		}
@@ -150,29 +160,12 @@ type AreaState struct {
 }
 
 //GetPlayer by name
-func (a *Area) GetPlayer(name string) *player.Player {
+func (a *Area) GetPlayer(name string) *PlayerInterface {
 	for v := range a.Players {
-		if v.Name == name {
-			return v
+		p := *v
+		if p.GetName() == name {
+			return &p
 		}
 	}
-	return &Player{}
-}
-
-// BroadcastRoom - send all
-func (a *Area) BroadcastRoom(eventType events.EventType, payload interface{}, sender string) {
-	event := events.NewEvent(eventType, payload, sender)
-	defer func() { recover() }()
-	for p := range a.Players {
-		if p.Name == sender {
-			continue
-		}
-		p.Stream <- event
-	}
-	for name, npc := range a.NPCs {
-		if name == sender {
-			continue
-		}
-		npc.Stream <- event
-	}
+	return new(PlayerInterface)
 }

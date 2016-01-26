@@ -3,28 +3,40 @@ package world
 import (
 	"area"
 	"core"
+	"events"
+	"rooms"
+	"time"
+	"timeStream"
 )
+
+type StreamInterface interface {
+	Live()
+	SetWorld(*World)
+	GetStream() *chan *events.Event
+	GetDate() time.Time
+}
 
 type World struct {
 	Rooms  map[string]*area.Area
-	Global *core.GlobalStream
-	Time   *core.TimeStream
+	Global *StreamInterface
+	Time   *timeStream.TimeStream
 }
 
-func NewWorld(gs *core.GlobalStream) *World {
+func NewWorld(gsl *StreamInterface) *World {
 	world := new(World)
-	world.Global = gs
-	gs.World = world
+	gs := *gsl
+	world.Global = gsl
+	gs.SetWorld(world)
 	world.Rooms = make(map[string]*area.Area)
-	world.Time = NewTimeStream(&gs.Stream, gs.State.Date)
+	world.Time = timeStream.NewTimeStream(gs.GetStream(), gs.GetDate())
 	go world.Time.Live()
 
 	return world
 }
 
 func (w *World) Init() {
-	gs := w.Global
-	room2 := area.NewArea("second", &gs.Stream)
+	gs := *w.Global
+	room2 := area.NewArea("second", gs.GetStream())
 	room2.Desc = "Абстрактная комната, не имеющая индивидуальности."
 	go room2.Live()
 	w.Rooms["second"] = room2

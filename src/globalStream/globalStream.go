@@ -1,11 +1,12 @@
 package globalStream
 
 import (
+	"area"
+	"events"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"rooms"
 	"strings"
 	"time"
 
@@ -34,13 +35,12 @@ type GlobalState struct {
 type GlobalStream struct {
 	area.Area
 	State GlobalState
-	World *world.World
 }
 
 // NewGlobalStream constructor
 func NewGlobalStream() GlobalStream {
 	gs := make(chan *events.Event, 100)
-	a :=area.NewArea("global", &gs)
+	a := area.NewArea("global", &gs)
 	stream := new(GlobalStream)
 	stream.Area = *a
 	s := stream.Storage.Session.Copy()
@@ -83,14 +83,15 @@ func (a *GlobalStream) ProcessEvent(event *events.Event) {
 	case events.MESSAGE:
 		log.Println(yellow("MESSAGE:"), event.Payload)
 		if event.Sender != "Announcer" {
-			p := a.GetPlayer(event.Sender)
-			a.BroadcastRoom(events.MESSAGE, event.Payload, event.Sender, p.Room)
+			p := *a.GetPlayer(event.Sender)
+			room := *p.GetRoom()
+			room.BroadcastRoom(events.MESSAGE, event.Payload, event.Sender)
 		} else {
 			a.Broadcast(events.MESSAGE, event.Payload, event.Sender)
 		}
 	case events.LOGGEDIN:
-		p := a.GetPlayer(event.Sender)
-		a.Streams[p.Name] = &p.Stream
+		p := *a.GetPlayer(event.Sender)
+		a.Streams[p.GetName()] = p.GetStream()
 	case events.COMMAND:
 		// log.Println(fmt.Sprintf("%v > %v", blue(event.Sender), event.Payload))
 		a.ProcessCommand(event)
@@ -140,10 +141,11 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 	case "goto":
 		go func() {
 			if len(tokens) == 2 {
-				p := a.GetPlayer(event.Sender)
-				room, ok := world.WORLD.Rooms[tokens[1]]
+				p := *a.GetPlayer(event.Sender)
+				w := *a.World
+				room, ok := w.GetRoom(tokens[1])
 				if ok {
-					if p.Room == room {
+					if p.GetRoom() == room {
 						a.SendEvent(event.Sender, events.ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
 					} else {
 						p.ChangeRoom(room)
@@ -160,17 +162,17 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 			// log.Println("try login", blue(tokens[1]), tokens[2])
 			_, ok := a.Streams[tokens[1]]
 			if ok {
-				player := a.GetPlayer(event.Sender)
-				player.Message(NewEvent(events.ERROR, "Пользователь с таким именем уже залогинен", "global"))
+				player := *a.GetPlayer(event.Sender)
+				player.Message(events.NewEvent(events.ERROR, "Пользователь с таким именем уже залогинен", "global"))
 			} else {
-				p := a.GetPlayer(event.Sender)
-				go p.ProcessEvent(NewEvent(events.LOGIN, tokens, "global"))
+				p := *a.GetPlayer(event.Sender)
+				go p.ProcessEvent(events.NewEvent(events.LOGIN, tokens, "global"))
 			}
 		}
 		// }()
 	case "help":
-		p := a.GetPlayer(event.Sender)
-		go a.SendEvent(p.Name, events.SYSTEMMESSAGE, "Help message")
+		p := *a.GetPlayer(event.Sender)
+		go a.SendEvent(p.GetName(), events.SYSTEMMESSAGE, "Help message")
 	default:
 		if strings.HasPrefix(command, "/") {
 			go a.Broadcast(events.MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
@@ -189,8 +191,8 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 		p.Streams["room"] = &a.Stream
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.Connection = c
-		p.Message(NewEvent(events.CONNECTED, nil, "global"))
-		p.Message(NewEvent(events.SYSTEMMESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
+		p.Message(events.NewEvent(events.CONNECTED, nil, "global"))
+		p.Message(events.NewEvent(events.SYSTEMMESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
 		a.Players[p] = c
 		if err != nil {
 			log.Print("upgrade:", err)
@@ -204,7 +206,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				log.Println(red("Disconnect"), name)
 				// p.Loggedin = false
 				go func() {
-					p.Stream <- NewEvent(events.CLOSE, nil, a.Name)
+					p.Stream <- events.NewEvent(events.CLOSE, nil, a.Name)
 				}()
 				delete(a.Players, p)
 				delete(a.Streams, p.Name)
@@ -215,7 +217,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 			if line == "" {
 				continue
 			}
-			*p.Streams["room"] <- NewEvent(events.COMMAND, line, p.Name)
+			*p.Streams["room"] <- events.NewEvent(events.COMMAND, line, p.Name)
 		}
 	}
 }
