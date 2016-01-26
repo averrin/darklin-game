@@ -1,10 +1,9 @@
 package main
 
-import "log"
-
-func NewHall(gs *chan *Event) Area {
+func NewHall(gs *chan *Event) *Area {
 	hall := NewArea("Hall", gs)
-	WORLD.Rooms["Hall"] = &hall
+	WORLD.Rooms["Hall"] = hall
+	hall.Desc = "Это холл. Большая, светлая комната."
 
 	hall.Handlers[LIGHT] = hall.HallLight
 

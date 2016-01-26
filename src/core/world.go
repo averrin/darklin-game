@@ -21,8 +21,9 @@ func NewWorld(gs *GlobalStream) *World {
 func (w *World) Init() {
 	gs := w.Global
 	room2 := NewArea("second", &gs.Stream)
+	room2.Desc = "Абстрактная комната, не имеющая индивидуальности."
 	go room2.Live()
-	w.Rooms["second"] = &room2
+	w.Rooms["second"] = room2
 	hall := NewHall(&gs.Stream)
 	log.Println(hall)
 	hall.Init()

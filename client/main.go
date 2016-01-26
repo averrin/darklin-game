@@ -77,6 +77,9 @@ func main() {
 			readline.PcItem("on"),
 			readline.PcItem("off"),
 		),
+		readline.PcItem("describe",
+			readline.PcItem("room"),
+		),
 	)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",
@@ -144,6 +147,9 @@ func main() {
 				print(sep+"%s %s", event.Sender, event.Payload)
 			case ROOMCHANGED:
 				sep := green("| ")
+				print(sep+"%s", event.Payload)
+			case DESCRIBE:
+				sep := blue("| ")
 				print(sep+"%s", event.Payload)
 			case SYSTEMMESSAGE:
 				sep := green("| ")

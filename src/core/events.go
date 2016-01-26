@@ -33,6 +33,7 @@ const (
 	SYSTEMMESSAGE
 	LIGHT
 	CONNECTED
+	DESCRIBE
 )
 
 // Event is atom of event stream

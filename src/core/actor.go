@@ -28,6 +28,7 @@ type Actor struct {
 	Streams       map[string]*chan *Event
 	Name          string
 	ID            string
+	Desc          string
 	Storage       *Storage
 
 	PendingEvents map[string]*Event

@@ -24,7 +24,7 @@ func (a *Area) String() string {
 }
 
 // NewArea constructor
-func NewArea(name string, gs *chan *Event) Area {
+func NewArea(name string, gs *chan *Event) *Area {
 	a := NewActor(name, gs)
 	actor := new(Area)
 	actor.Actor = *a
@@ -45,7 +45,7 @@ func NewArea(name string, gs *chan *Event) Area {
 		db.C("rooms").Find(bson.M{"name": actor.Name}).One(&actor.State)
 		actor.State.New = false
 	}
-	return *actor
+	return actor
 }
 
 //ProcessEvent from user or cmd
@@ -55,6 +55,8 @@ func (a *Area) ProcessEvent(event *Event) {
 	// yellow := formatter.Yellow
 	handler, ok := a.Handlers[event.Type]
 	switch event.Type {
+	case DESCRIBE:
+		a.SendEvent(event.Sender, DESCRIBE, a.Desc)
 	case ROOMENTER:
 		if ok {
 			handled := handler(event)
@@ -96,6 +98,10 @@ func (a *Area) ProcessCommand(event *Event) {
 		return
 	}
 	switch command {
+	case "describe":
+		if tokens[1] == "room" {
+			a.SendEvent(event.Sender, DESCRIBE, a.Desc)
+		}
 	case "light":
 		if len(tokens) == 2 && (tokens[1] == "on" || tokens[1] == "off") {
 			if tokens[1] == "on" {
