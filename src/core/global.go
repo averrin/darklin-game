@@ -153,7 +153,6 @@ func (a *GlobalStream) ProcessCommand(event *Event) {
 					if p.Room == room {
 						a.SendEvent(event.Sender, ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
 					} else {
-						log.Println(p.Name, room)
 						p.ChangeRoom(room)
 					}
 				} else {

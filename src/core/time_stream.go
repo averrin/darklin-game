@@ -1,10 +1,8 @@
 package main
 
-import (
-	"fmt"
-	"time"
-	// "fmt"
-)
+import "time"
+
+// "fmt"
 
 // TimeStream - ticker
 type TimeStream struct {
@@ -34,7 +32,7 @@ func (a *TimeStream) Live() {
 			event := <-a.Stream
 			switch event.Type {
 			case INFO:
-				event.Payload.(chan *Event) <- NewEvent(SYSTEMMESSAGE, fmt.Sprint(a.Date), "time")
+				event.Payload.(chan *Event) <- NewEvent(SYSTEMMESSAGE, a.Date.Format("Mon Jan _2 15:04:05 2006"), "time")
 			case RESET:
 				a.Date = time.Date(774, 1, 1, 12, 0, 0, 0, time.UTC)
 			case PAUSE:

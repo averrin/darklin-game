@@ -59,7 +59,7 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	if n != 0 {
 		db.C("players").Find(bson.M{"name": login}).One(&a.State)
 		if password != a.State.Password {
-			return "wrong password", false
+			return "Неверный пароль", false
 		}
 		a.State.New = false
 	} else {
@@ -71,7 +71,6 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	}
 	a.Name = login
 	a.Loggedin = true
-	log.Println(a.State.Room)
 	go a.Live()
 	a.ChangeRoom(WORLD.Rooms[a.State.Room])
 	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
@@ -105,21 +104,20 @@ func (a *Player) Message(event *Event) {
 func (a *Player) ChangeRoom(room *Area) {
 	prevRoom := a.Room
 	if prevRoom != nil {
-		a.BroadcastRoom(ROOMEXIT, "Exit from room "+a.Room.Name, a.Name, a.Room)
+		a.BroadcastRoom(ROOMEXIT, "Покинул комнату", a.Name, a.Room)
 		delete(a.Room.Streams, a.Name)
 		delete(a.Room.Players, a)
 	}
-	log.Println(a.Streams, room.Stream)
 	a.Streams["room"] = &room.Stream
 	a.Room = room
 	a.State.Room = room.Name
 	go a.UpdateState()
 	room.Players[a] = a.Connection
 	room.Streams[a.Name] = &a.Stream
-	a.BroadcastRoom(ROOMENTER, "Enter into room "+a.Room.Name, a.Name, a.Room)
+	a.BroadcastRoom(ROOMENTER, "Вошел в комнату", a.Name, a.Room)
 	a.SendEvent("room", ROOMENTER, nil)
 	if prevRoom != nil {
-		a.Stream <- NewEvent(ROOMCHANGED, fmt.Sprintf("You are here: %v", a.Room.Name), "global")
+		a.Stream <- NewEvent(ROOMCHANGED, fmt.Sprintf("Вы здесь: %v", a.Room.Name), "global")
 	}
 }
 

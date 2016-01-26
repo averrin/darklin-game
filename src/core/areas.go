@@ -16,6 +16,11 @@ type Area struct {
 	Players   map[*Player]*websocket.Conn
 	Formatter Formatter
 	State     AreaState
+	NPCs      map[string]*NPC
+}
+
+func (a *Area) String() string {
+	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d}", a.Name, len(a.Players), len(a.NPCs))
 }
 
 // NewArea constructor
@@ -24,6 +29,7 @@ func NewArea(name string, gs *chan *Event) Area {
 	actor := new(Area)
 	actor.Actor = *a
 	actor.Players = make(map[*Player]*websocket.Conn)
+	actor.NPCs = make(map[string]*NPC)
 	formatter := NewFormatter()
 	actor.Formatter = formatter
 	actor.Actor.ProcessEvent = actor.ProcessEvent
@@ -52,7 +58,7 @@ func (a *Area) ProcessEvent(event *Event) {
 		if !a.State.Light {
 			a.SendEvent(event.Sender, SYSTEMMESSAGE, "В комнате темно")
 		}
-		log.Println(a.Name, event)
+		// log.Println(a.Name, event)
 	case COMMAND:
 		a.ProcessCommand(event)
 	}
@@ -97,7 +103,7 @@ func (a *Area) ProcessCommand(event *Event) {
 		if strings.HasPrefix(command, "/") {
 			a.Broadcast(MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
 		} else {
-			log.Println(a.Name, "forward", event)
+			// log.Println(a.Name, "forward", event)
 			a.ForwardEvent("global", event)
 		}
 	}

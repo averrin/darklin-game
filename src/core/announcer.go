@@ -27,6 +27,6 @@ func (a Announcer) ProcessEvent(event *Event) {
 	case SECOND:
 		a.SendEvent("global", MESSAGE, "Every second, mister")
 	case MINUTE:
-		a.SendEvent("global", MESSAGE, fmt.Sprintf("Игровое время: %v", WORLD.Time.Date))
+		a.SendEvent("global", MESSAGE, fmt.Sprintf("Игровое время: %v", WORLD.Time.Date.Format("Mon Jan _2 15:04:05 2006")))
 	}
 }

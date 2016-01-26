@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"gopkg.in/mgo.v2/bson"
 )
@@ -11,6 +10,10 @@ import (
 type Character struct {
 	Actor
 	Room *Area
+}
+
+func (a *Character) String() string {
+	return fmt.Sprintf("{Name: %s, Room: %s}", a.Name, a.Room.Name)
 }
 
 //NPC - just NPC
@@ -40,16 +43,18 @@ func (a *NPC) UpdateState() {
 
 //ChangeRoom - enter to new room
 func (a *NPC) ChangeRoom(room *Area) {
-	a.BroadcastRoom(ROOMEXIT, "Exit from room "+a.Room.Name, a.Name, a.Room)
+	a.BroadcastRoom(ROOMEXIT, "Покинул комнату", a.Name, a.Room)
 	delete(a.Room.Streams, a.Name)
+	delete(a.Room.NPCs, a.Name)
 	a.Streams["room"] = &room.Stream
 	a.Room = room
 	a.State.Room = room.Name
 	go a.UpdateState()
 	room.Streams[a.Name] = &a.Stream
-	a.BroadcastRoom(ROOMENTER, "Enter into room "+a.Room.Name, a.Name, a.Room)
+	room.NPCs[a.Name] = a
+	a.BroadcastRoom(ROOMENTER, "Вошел в комнату", a.Name, a.Room)
 	a.SendEvent("room", ROOMENTER, nil)
-	a.Stream <- NewEvent(ROOMCHANGED, fmt.Sprintf("You are here: %v", a.Room.Name), "global")
+	a.Stream <- NewEvent(ROOMCHANGED, a.Room.Name, "global")
 }
 
 // NewNPC constructor
@@ -77,53 +82,4 @@ func NewNPC(name string, gs *chan *Event, room *Area) NPC {
 	actor.Streams["room"] = &actor.Room.Stream
 	actor.Room.Streams[actor.Name] = &actor.Stream
 	return *actor
-}
-
-//NewMik - nobody likes darkness
-func NewMik(gs *chan *Event) NPC {
-	room := WORLD.Rooms["first"]
-	mik := NewNPC("Mik Rori", gs, room)
-	mik.ProcessEvent = mik.Mik
-	che := NewEvent(MIK_CHANGEROOM, nil, mik.Name)
-	che.ID = "Mik_change_room"
-	che.Every = 1 * time.Minute
-	go func() {
-		mik.Stream <- che
-	}()
-	return mik
-}
-
-const (
-	MIK_CHANGEROOM EventType = iota
-)
-
-//Mik - Mik event loop
-func (a *NPC) Mik(event *Event) {
-	switch event.Type {
-	case ROOMENTER:
-		a.SendEvent(event.Sender, MESSAGE, "Эй, кто выключил свет?")
-	case MIK_CHANGEROOM:
-		if a.State.Room == "first" {
-			a.ChangeRoom(WORLD.Rooms["second"])
-		} else {
-			a.ChangeRoom(WORLD.Rooms["first"])
-		}
-	case LIGHT:
-		if !event.Payload.(bool) {
-			a.BroadcastRoom(MESSAGE, "Эй, кто выключил свет?", a.Name, a.Room)
-			a.BroadcastRoom(SYSTEMMESSAGE, "*шорох, шаги, чирканье спичек*", a.Name, a.Room)
-			ne := NewEvent(COMMAND, "light on", a.Name)
-			ne.ID = "Mik_light_on"
-			ne.Delay = 5 * time.Second
-			a.Room.Stream <- ne
-		} else {
-			ev, ok := a.Room.PendingEvents["Mik_light_on"]
-			if ok {
-				a.BroadcastRoom(MESSAGE, "То-то же!", a.Name, a.Room)
-				ev.Abort = true
-			} else {
-				a.BroadcastRoom(MESSAGE, "Так лучше!", a.Name, a.Room)
-			}
-		}
-	}
 }

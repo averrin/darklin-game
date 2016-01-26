@@ -28,13 +28,12 @@ func main() {
 	gs := NewGlobalStream()
 	WORLD = NewWorld(&gs)
 	WORLD.InitNPC()
-	log.Println(TIME)
 
 	announcer := NewAnnouncer(&gs.Stream)
 	go announcer.Live()
 
 	// gs.Subscribe(SECOND, announcer)
-	gs.Subscribe(MINUTE, announcer)
+	gs.Subscribe(MINUTE, &announcer.Actor)
 
 	gs.Streams["time"] = &WORLD.Time.Stream
 

@@ -10,11 +10,6 @@ type Interface interface {
 	ProcessEvent(event *Event)
 }
 
-// EventSubscriber - can subscribe
-type EventSubscriber interface {
-	ConsumeEvent(*Event)
-}
-
 // EventPublisher - can send
 type EventPublisher interface {
 	SendEvent(EventType, interface{})
@@ -23,7 +18,7 @@ type EventPublisher interface {
 // Subscription on events
 type Subscription struct {
 	Type       EventType
-	Subscriber EventSubscriber
+	Subscriber *Actor
 }
 
 // Actor - basic event-driven class
@@ -40,6 +35,11 @@ type Actor struct {
 	ProcessEvent   func(event *Event)
 	ProcessCommand func(event *Event)
 }
+
+//String func for plain actor
+// func (a *Actor) String() string {
+// 	return fmt.Sprintf("{Name: %s}", a.Name)
+// }
 
 // NewActor construct new Actor
 func NewActor(name string, gs *chan *Event) *Actor {
@@ -95,18 +95,24 @@ func (a *Actor) BroadcastRoom(eventType EventType, payload interface{}, sender s
 		}
 		p.Stream <- event
 	}
+	for name, npc := range room.NPCs {
+		if name == sender {
+			continue
+		}
+		npc.Stream <- event
+	}
 }
 
 // ForwardEvent to new reciever
 func (a Actor) ForwardEvent(reciever string, event *Event) {
 	// defer func() { recover() }()
-	log.Println("event before forwarded", reciever, *a.Streams[reciever])
+	// log.Println("event before forwarded", reciever, *a.Streams[reciever])
 	*a.Streams[reciever] <- event
-	log.Println("event forwarded")
+	// log.Println("event forwarded")
 }
 
 // Subscribe on events
-func (a *Actor) Subscribe(eventType EventType, subscriber EventSubscriber) {
+func (a *Actor) Subscribe(eventType EventType, subscriber *Actor) {
 	a.Subscriptions = append(a.Subscriptions, Subscription{eventType, subscriber})
 }
 
@@ -114,7 +120,7 @@ func (a *Actor) Subscribe(eventType EventType, subscriber EventSubscriber) {
 func (a Actor) NotifySubscribers(event *Event) {
 	for _, s := range a.Subscriptions {
 		if event.Type == s.Type || s.Type == ALL {
-			go s.Subscriber.ConsumeEvent(event)
+			s.Subscriber.Stream <- event
 		}
 	}
 }

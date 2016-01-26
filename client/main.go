@@ -20,16 +20,6 @@ import (
 	"gopkg.in/readline.v1"
 )
 
-// type EventType int
-//
-// // Event is atom of event stream
-// type Event struct {
-// 	Timestamp time.Time
-// 	Type      EventType
-// 	Payload   interface{}
-// 	Sender    string
-// }
-
 func runInit(c *websocket.Conn) {
 	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	initPath := path.Join(dir, "init.cmd")
@@ -73,6 +63,7 @@ func connect(u url.URL) *websocket.Conn {
 func main() {
 
 	var completer = readline.NewPrefixCompleter(
+		readline.PcItem("/"),
 		readline.PcItem("time"),
 		readline.PcItem("exit"),
 		readline.PcItem("online"),
@@ -113,6 +104,7 @@ func main() {
 
 	green := color.New(color.FgGreen).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
 	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 
 	go func() {
@@ -144,21 +136,30 @@ func main() {
 			switch event.Type {
 			case HEARTBEAT:
 			case LIGHT:
+			case ROOMENTER:
+				sep := yellow("| ")
+				print(sep+"%s %s", event.Sender, event.Payload)
+			case ROOMEXIT:
+				sep := yellow("| ")
+				print(sep+"%s %s", event.Sender, event.Payload)
+			case ROOMCHANGED:
+				sep := green("| ")
+				print(sep+"%s", event.Payload)
 			case SYSTEMMESSAGE:
-				sep := green("|")
-				print(sep+" %s", event.Payload)
+				sep := green("| ")
+				print(sep+"%s", event.Payload)
 			case LOGGEDIN:
-				sep := green("|")
-				print(sep+" %s", event.Payload)
+				sep := green("| ")
+				print(sep+"%s", event.Payload)
 			case ERROR:
-				sep := red("!")
-				print(sep+" %s", event.Payload)
+				sep := red("! ")
+				print(sep+"%s", event.Payload)
 			case CONNECTED:
 				runInit(conn)
 			default:
-				sep := blue(">")
+				sep := blue("> ")
 				// if !strings.HasPrefix(event.Payload.(string), "hi") {
-				print(sep+" %s: %s", event.Sender, event.Payload)
+				print(sep+"%s: %s", event.Sender, event.Payload)
 				// }
 			}
 		}
