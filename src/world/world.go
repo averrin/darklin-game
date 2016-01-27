@@ -13,7 +13,7 @@ import (
 type World struct {
 	Rooms  map[string]*actor.RoomInterface
 	Global *actor.StreamInterface
-	Time   *timeStream.TimeStream
+	Time   actor.TimeInterface
 }
 
 func NewWorld(gs actor.StreamInterface) *World {
@@ -46,15 +46,19 @@ func (w *World) Init() {
 }
 
 func (w *World) AddRoom(name string, room actor.RoomInterface) {
-	panic("not implemented")
+	w.Rooms[name] = &room
 }
 
 func (w *World) GetDate() time.Time {
-	return w.Time.Date
+	return w.Time.GetDate()
 }
 
 func (w *World) GetGlobal() *actor.StreamInterface {
 	return w.Global
+}
+
+func (w *World) GetTime() *actor.TimeInterface {
+	return &w.Time
 }
 
 func (w *World) GetRoom(name string) (actor.RoomInterface, bool) {

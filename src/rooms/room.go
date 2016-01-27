@@ -24,16 +24,22 @@ func NewRoom(name string, gs actor.StreamInterface) *Room {
 // 	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d}", a.Name, len(a.Players), len(a.NPCs))
 // }
 
-func (a *Room) AddNPC(actor.NPCInterface) {
-	panic("not implemented")
+func (a *Room) AddNPC(npc actor.NPCInterface) {
+	a.Streams[npc.GetName()] = npc.GetStream()
+	a.NPCs[npc.GetName()] = npc
 }
 
 func (a *Room) RemoveNPC(name string) {
 	panic("not implemented")
 }
 
-func (a *Room) AddPlayer(actor.PlayerInterface) {
-	panic("not implemented")
+func (a *Room) AddPlayer(p actor.PlayerInterface) {
+	a.Players[&p] = p.GetConnection()
+	a.Streams[p.GetName()] = p.GetStream()
+}
+func (a *Room) RemovePlayer(p actor.PlayerInterface) {
+	delete(a.Streams, p.GetName())
+	delete(a.Players, &p)
 }
 
 // BroadcastRoom - send all

@@ -72,4 +72,6 @@ func (a *TimeStream) Sleep(duration time.Duration) {
 	}
 }
 
-var TIME *TimeStream
+func (a *TimeStream) GetDate() time.Time {
+	return a.Date
+}

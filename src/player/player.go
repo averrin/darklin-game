@@ -2,7 +2,6 @@ package player
 
 import (
 	"actor"
-	"area"
 	"crypto/sha256"
 	"encoding/hex"
 	"events"
@@ -18,7 +17,7 @@ import (
 // Player just someone who do something
 type Player struct {
 	actor.Actor
-	Room       *area.Area
+	Room       *actor.RoomInterface
 	Connection *websocket.Conn
 	State      PlayerState
 	Loggedin   bool
@@ -30,16 +29,16 @@ func (a *Player) ConsumeEvent(event *events.Event) {
 }
 
 // NewPlayer because i, sucj in golang yet
-func NewPlayer(name string, gs *chan *events.Event) *Player {
+func NewPlayer(name string, gs actor.StreamInterface) actor.PlayerInterface {
 	// green := color.New(color.FgGreen).SprintFunc()
 	// log.Println("New player: ", green(name))
 	a := actor.NewActor(name, gs)
-	actor := new(Player)
-	actor.Actor = *a
-	actor.Loggedin = false
-	actor.Actor.ProcessEvent = actor.ProcessEvent
-	actor.Actor.ProcessCommand = actor.ProcessCommand
-	return actor
+	p := new(Player)
+	p.Actor = *a
+	p.Loggedin = false
+	p.Actor.ProcessEvent = p.ProcessEvent
+	p.Actor.ProcessCommand = p.ProcessCommand
+	return p
 }
 
 //HashPassword - hash. password.
@@ -76,7 +75,8 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	a.Name = login
 	a.Loggedin = true
 	go a.Live()
-	a.ChangeRoom(world.WORLD.Rooms[a.State.Room])
+	room, _ := a.World.GetRoom(a.State.Room)
+	a.ChangeRoom(room)
 	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
 	// log.Println("success login", blue(tokens[1]))
 	go a.Message(events.NewEvent(events.LOGGEDIN, "Вы вошли как: "+a.Name, "global"))
@@ -105,23 +105,21 @@ func (a *Player) Message(event *events.Event) {
 }
 
 //ChangeRoom - enter to new room
-func (a *Player) ChangeRoom(room *Area) {
-	prevRoom := a.Room
+func (a *Player) ChangeRoom(room actor.RoomInterface) {
+	prevRoom := *a.Room
 	if prevRoom != nil {
-		a.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name, a.Room)
-		delete(a.Room.Streams, a.Name)
-		delete(a.Room.Players, a)
+		prevRoom.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
+		prevRoom.RemovePlayer(a)
 	}
-	a.Streams["room"] = &room.Stream
-	a.Room = room
-	a.State.Room = room.Name
+	a.Streams["room"] = room.GetStream()
+	a.Room = &room
+	a.State.Room = room.GetName()
 	go a.UpdateState()
-	room.Players[a] = a.Connection
-	room.Streams[a.Name] = &a.Stream
-	a.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name, a.Room)
+	room.AddPlayer(a)
+	room.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
 	a.SendEvent("room", events.ROOMENTER, nil)
 	if prevRoom != nil {
-		a.Stream <- events.NewEvent(events.ROOMCHANGED, fmt.Sprintf("Вы здесь: %v", a.Room.Name), "global")
+		a.Stream <- events.NewEvent(events.ROOMCHANGED, fmt.Sprintf("Вы здесь: %v", room.GetName()), "global")
 	}
 }
 
@@ -146,6 +144,16 @@ func (a *Player) ProcessEvent(event *events.Event) {
 
 //ProcessCommand - command handler
 func (a *Player) ProcessCommand(event *events.Event) {}
+func (a *Player) GetConnection() *websocket.Conn {
+	return a.Connection
+}
+func (a *Player) SetConnection(c *websocket.Conn) {
+	a.Connection = c
+}
+
+func (a *Player) GetRoom() actor.RoomInterface {
+	return *a.Room
+}
 
 //PlayerState - db saved state
 type PlayerState struct {

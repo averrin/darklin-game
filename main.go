@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"player"
 	"world"
 
 	"gopkg.in/mgo.v2"
@@ -24,10 +25,11 @@ func main() {
 	core.SESSION.SetMode(mgo.Monotonic, true)
 
 	gs := globalStream.NewGlobalStream()
+	gs.NewPlayer = player.NewPlayer
 	world := world.NewWorld(gs)
 	world.Init()
 
-	gs.SetStream("time", &world.Time.Stream)
+	gs.SetStream("time", (*world.GetTime()).GetStream())
 
 	http.HandleFunc("/ws", gs.GetPlayerHandler())
 

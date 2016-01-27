@@ -35,7 +35,7 @@ type GlobalState struct {
 type GlobalStream struct {
 	area.Area
 	State     GlobalState
-	NewPlayer func(string, *chan *events.Event) *actor.PlayerInterface
+	NewPlayer func(string, actor.StreamInterface) actor.PlayerInterface
 }
 
 // NewGlobalStream constructor
@@ -127,7 +127,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 		}
 	case "time":
 		if event.Sender == "cmd" {
-			log.Fatal("TODO: fix it")
+			panic("TODO: fix it")
 			// log.Println(fmt.Sprintf("Date: %v", world.WORLD.Time.Date))
 		} else {
 			go a.SendEvent("time", events.INFO, *a.Streams[event.Sender])
@@ -188,7 +188,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := uuid.New()
-		p := *a.NewPlayer(name, &a.Stream)
+		p := a.NewPlayer(name, a)
 		p.SetStream("room", &a.Stream)
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.SetConnection(c)

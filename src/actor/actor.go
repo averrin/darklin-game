@@ -5,10 +5,8 @@ import (
 	"events"
 	"expvar"
 	"log"
-	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -18,39 +16,10 @@ var (
 
 // "fmt"
 
-// Interface - Anybody who can live
-type Interface interface {
-	Live()
-	ProcessEvent(event *events.Event)
-}
-
-// EventPublisher - can send
-type EventPublisher interface {
-	SendEvent(events.EventType, interface{})
-}
-
 // Subscription on events
 type Subscription struct {
 	Type       events.EventType
 	Subscriber *Actor
-}
-
-type StreamInterface interface {
-	Live()
-	SetWorld(WorldInterface)
-	GetWorld() WorldInterface
-	GetStream() *chan *events.Event
-	SetStream(string, *chan *events.Event)
-	GetDate() time.Time
-	Subscribe(events.EventType, *Actor)
-	GetPlayerHandler() func(http.ResponseWriter, *http.Request)
-}
-
-type WorldInterface interface {
-	GetRoom(string) (RoomInterface, bool)
-	GetGlobal() *StreamInterface
-	GetDate() time.Time
-	AddRoom(string, RoomInterface)
 }
 
 //CharState - Basic state
@@ -74,18 +43,6 @@ type AreaState struct {
 	New bool
 }
 
-type RoomInterface interface {
-	BroadcastRoom(events.EventType, interface{}, string)
-	GetStream() *chan *events.Event
-	GetState() AreaState
-	GetName() string
-	RemoveNPC(string)
-	AddNPC(NPCInterface)
-	AddPlayer(PlayerInterface)
-	SendEventWithSender(string, events.EventType, interface{}, string)
-	GetPendingEvent(string) (*events.Event, bool)
-}
-
 // Actor - basic event-driven class
 type Actor struct {
 	Stream        chan *events.Event
@@ -103,23 +60,6 @@ type Actor struct {
 	CommandHandlers map[string]func(string) bool
 	ProcessEvent    func(event *events.Event)
 	ProcessCommand  func(event *events.Event)
-}
-
-type PlayerInterface interface {
-	Live()
-	GetName() string
-	GetStream() *chan *events.Event
-	SetStream(string, *chan *events.Event)
-	GetRoom() RoomInterface
-	ChangeRoom(RoomInterface)
-	Message(*events.Event)
-	ProcessEvent(*events.Event)
-	SetConnection(*websocket.Conn)
-}
-
-type NPCInterface interface {
-	ChangeRoom(RoomInterface)
-	GetStream() *chan *events.Event
 }
 
 //String func for plain actor
@@ -250,7 +190,7 @@ func (a *Actor) ProcessEventAbstract(event *events.Event) {
 
 func (a *Actor) ProcessCommandAbstract(event *events.Event) {}
 func (a *Actor) Sleep(duration time.Duration) {
-	log.Fatal("Fix it")
+	(*a.World.GetTime()).Sleep(duration)
 }
 
 func (a *Actor) GetName() string {
