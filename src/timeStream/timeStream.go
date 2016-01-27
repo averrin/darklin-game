@@ -15,7 +15,7 @@ type TimeStream struct {
 }
 
 // NewTimeStream constructor
-func NewTimeStream(gs *chan *events.Event, date time.Time) *TimeStream {
+func NewTimeStream(gs actor.StreamInterface, date time.Time) *TimeStream {
 	a := actor.NewActor("time", gs)
 	stream := new(TimeStream)
 	stream.Actor = *a

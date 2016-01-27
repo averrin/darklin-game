@@ -1,11 +1,10 @@
 package rooms
 
 import (
-	"actor"
 	"area"
+	// "fmt"
+	"actor"
 	"events"
-	"fmt"
-	"log"
 )
 
 type Room struct {
@@ -13,7 +12,7 @@ type Room struct {
 	NPCs map[string]actor.NPCInterface
 }
 
-func NewRoom(name string, gs *chan *events.Event) *Room {
+func NewRoom(name string, gs actor.StreamInterface) *Room {
 	a := area.NewArea(name, gs)
 	room := new(Room)
 	room.Area = *a
@@ -21,20 +20,20 @@ func NewRoom(name string, gs *chan *events.Event) *Room {
 	return room
 }
 
-func (a *Room) String() string {
-	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d}", a.Name, len(a.Players), len(a.NPCs))
-}
+// func (a *Room) String() string {
+// 	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d}", a.Name, len(a.Players), len(a.NPCs))
+// }
 
 func (a *Room) AddNPC(actor.NPCInterface) {
-	log.Fatal("not implemented")
+	panic("not implemented")
 }
 
 func (a *Room) RemoveNPC(name string) {
-	log.Fatal("not implemented")
+	panic("not implemented")
 }
 
 func (a *Room) AddPlayer(actor.PlayerInterface) {
-	log.Fatal("not implemented")
+	panic("not implemented")
 }
 
 // BroadcastRoom - send all

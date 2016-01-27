@@ -48,7 +48,7 @@ type StreamInterface interface {
 
 type WorldInterface interface {
 	GetRoom(string) (RoomInterface, bool)
-	GetGlobal() StreamInterface
+	GetGlobal() *StreamInterface
 	GetDate() time.Time
 	AddRoom(string, RoomInterface)
 }
@@ -128,11 +128,12 @@ type NPCInterface interface {
 // }
 
 // NewActor construct new Actor
-func NewActor(name string, gs *chan *events.Event) *Actor {
+func NewActor(name string, gs StreamInterface) *Actor {
 	actor := new(Actor)
+	actor.World = gs.GetWorld()
 	actor.Streams = make(map[string]*chan *events.Event)
 	actor.PendingEvents = make(map[string]*events.Event)
-	actor.Streams["global"] = gs
+	actor.Streams["global"] = gs.GetStream()
 	actor.Stream = make(chan *events.Event)
 	actor.Name = name
 	actor.Storage = core.NewStorage()

@@ -22,7 +22,7 @@ type Area struct {
 }
 
 //area.NewArea constructor
-func NewArea(name string, gs *chan *events.Event) *Area {
+func NewArea(name string, gs actor.StreamInterface) *Area {
 	a := actor.NewActor(name, gs)
 	area := new(Area)
 	area.Actor = *a

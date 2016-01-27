@@ -55,7 +55,7 @@ func (a *NPC) ChangeRoom(room actor.RoomInterface) {
 }
 
 // NewNPC constructor
-func NewNPC(name string, gs *chan *events.Event, roomName string) *NPC {
+func NewNPC(name string, gs actor.StreamInterface, roomName string) *NPC {
 	a := actor.NewActor(name, gs)
 	char := new(NPC)
 	char.Actor = *a

@@ -1,11 +1,12 @@
 package rooms
 
 import (
+	"actor"
 	"events"
 	"npc"
 )
 
-func NewHall(gs *chan *events.Event) *Room {
+func NewHall(gs actor.StreamInterface) *Room {
 	hall := NewRoom("Hall", gs)
 	world := hall.World
 	world.AddRoom("Hall", hall)
@@ -20,8 +21,8 @@ func NewHall(gs *chan *events.Event) *Room {
 
 func (a *Room) Init() {
 	world := a.World
-	gs := world.GetGlobal()
-	mik := npc.NewMik(gs.GetStream())
+	gs := *world.GetGlobal()
+	mik := npc.NewMik(gs)
 	go mik.Live()
 }
 

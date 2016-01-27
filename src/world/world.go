@@ -23,7 +23,7 @@ func NewWorld(gs actor.StreamInterface) *World {
 	world.Global = &gs
 	log.Println((*world.Global).GetWorld())
 	world.Rooms = make(map[string]*actor.RoomInterface)
-	world.Time = timeStream.NewTimeStream(gs.GetStream(), gs.GetDate())
+	world.Time = timeStream.NewTimeStream(gs, gs.GetDate())
 	go world.Time.Live()
 
 	return world
@@ -31,14 +31,14 @@ func NewWorld(gs actor.StreamInterface) *World {
 
 func (w *World) Init() {
 	gs := *w.Global
-	room2 := rooms.NewRoom("second", gs.GetStream())
+	room2 := rooms.NewRoom("second", gs)
 	room2.Desc = "Абстрактная комната, не имеющая индивидуальности."
 	go room2.Live()
 	ri := actor.RoomInterface(room2)
 	w.Rooms["second"] = &ri
-	hall := rooms.NewHall(gs.GetStream())
+	hall := rooms.NewHall(gs)
 	hall.Init()
-	announcer := npc.NewAnnouncer(gs.GetStream())
+	announcer := npc.NewAnnouncer(gs)
 	go announcer.Live()
 
 	// gs.Subscribe(SECOND, announcer)
@@ -46,15 +46,15 @@ func (w *World) Init() {
 }
 
 func (w *World) AddRoom(name string, room actor.RoomInterface) {
-	log.Fatal("not implemented")
+	panic("not implemented")
 }
 
 func (w *World) GetDate() time.Time {
 	return w.Time.Date
 }
 
-func (w *World) GetGlobal() actor.StreamInterface {
-	return *w.Global
+func (w *World) GetGlobal() *actor.StreamInterface {
+	return w.Global
 }
 
 func (w *World) GetRoom(name string) (actor.RoomInterface, bool) {

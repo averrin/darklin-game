@@ -2,9 +2,10 @@ package npc
 
 import "time"
 import "events"
+import "actor"
 
 //NewMik - nobody likes darkness
-func NewMik(gs *chan *events.Event) *NPC {
+func NewMik(gs actor.StreamInterface) *NPC {
 	mik := NewNPC("Mik Rori", gs, "Hall")
 	// mik.ProcessEvent = mik.Mik
 

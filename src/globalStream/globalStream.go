@@ -40,9 +40,9 @@ type GlobalStream struct {
 
 // NewGlobalStream constructor
 func NewGlobalStream() *GlobalStream {
-	gs := make(chan *events.Event, 100)
-	a := area.NewArea("global", &gs)
 	stream := new(GlobalStream)
+	stream.Stream = make(chan *events.Event, 100)
+	a := area.NewArea("global", stream)
 	stream.Area = *a
 	s := stream.Storage.Session.Copy()
 	defer s.Close()
