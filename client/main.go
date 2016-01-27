@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"events"
 	"flag"
 	"fmt"
 	"log"
@@ -126,7 +127,7 @@ func main() {
 				// return
 			}
 			m++
-			var event *Event
+			var event *events.Event
 
 			// decoder := json.NewDecoder(bytes.NewReader(message))
 			// err = decoder.Decode(&event)
@@ -137,30 +138,30 @@ func main() {
 				log.Fatal(err)
 			}
 			switch event.Type {
-			case HEARTBEAT:
-			case LIGHT:
-			case ROOMENTER:
+			case events.HEARTBEAT:
+			case events.LIGHT:
+			case events.ROOMENTER:
 				sep := yellow("| ")
 				print(sep+"%s %s", event.Sender, event.Payload)
-			case ROOMEXIT:
+			case events.ROOMEXIT:
 				sep := yellow("| ")
 				print(sep+"%s %s", event.Sender, event.Payload)
-			case ROOMCHANGED:
+			case events.ROOMCHANGED:
 				sep := green("| ")
 				print(sep+"%s", event.Payload)
-			case DESCRIBE:
+			case events.DESCRIBE:
 				sep := blue("| ")
 				print(sep+"%s", event.Payload)
-			case SYSTEMMESSAGE:
+			case events.SYSTEMMESSAGE:
 				sep := green("| ")
 				print(sep+"%s", event.Payload)
-			case LOGGEDIN:
+			case events.LOGGEDIN:
 				sep := green("| ")
 				print(sep+"%s", event.Payload)
-			case ERROR:
+			case events.ERROR:
 				sep := red("! ")
 				print(sep+"%s", event.Payload)
-			case CONNECTED:
+			case events.CONNECTED:
 				runInit(conn)
 			default:
 				sep := blue("> ")
