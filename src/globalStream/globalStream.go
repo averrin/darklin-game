@@ -85,8 +85,8 @@ func (a *GlobalStream) ProcessEvent(event *events.Event) {
 		log.Println(yellow("MESSAGE:"), event.Payload)
 		if event.Sender != "Announcer" {
 			p := *a.GetPlayer(event.Sender)
-			room := p.GetRoom()
-			room.BroadcastRoom(events.MESSAGE, event.Payload, event.Sender)
+			room, _ := p.GetRoom()
+			(*room).BroadcastRoom(events.MESSAGE, event.Payload, event.Sender)
 		} else {
 			a.Broadcast(events.MESSAGE, event.Payload, event.Sender)
 		}
@@ -146,7 +146,8 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 				w := a.World
 				room, ok := w.GetRoom(tokens[1])
 				if ok {
-					if p.GetRoom() == room {
+					pr, _ := p.GetRoom()
+					if pr == room {
 						a.SendEvent(event.Sender, events.ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
 					} else {
 						p.ChangeRoom(room)
@@ -219,9 +220,13 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 			if line == "" {
 				continue
 			}
-			room := p.GetRoom()
-			stream := *room.GetStream()
-			stream <- events.NewEvent(events.COMMAND, line, p.GetName())
+			room, ok := p.GetRoom()
+			if ok {
+				stream := *(*room).GetStream()
+				stream <- events.NewEvent(events.COMMAND, line, p.GetName())
+			} else {
+				a.Stream <- events.NewEvent(events.COMMAND, line, p.GetName())
+			}
 		}
 	}
 }

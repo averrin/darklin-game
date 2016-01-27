@@ -11,12 +11,12 @@ import (
 //Character - room-based actor
 type Character struct {
 	actor.Actor
-	Room  actor.RoomInterface
+	Room  *actor.RoomInterface
 	World actor.WorldInterface
 }
 
 func (a *Character) String() string {
-	room := a.Room
+	room := *a.Room
 	return fmt.Sprintf("{Name: %s, Room: %s}", a.Name, room.GetName())
 }
 
@@ -35,23 +35,23 @@ func (a *NPC) UpdateState() {
 }
 
 //ChangeRoom - enter to new room
-func (a *NPC) ChangeRoom(room actor.RoomInterface) {
-	prevRoom := a.Room
+func (a *NPC) ChangeRoom(room *actor.RoomInterface) {
+	prevRoom := *a.Room
 	prevRoom.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
 	prevRoom.RemoveNPC(a.Name)
 	// delete(a.Room.NPCs, a.Name)
-	a.Streams["room"] = room.GetStream()
+	a.Streams["room"] = (*room).GetStream()
 	a.Room = room
-	a.State.Room = room.GetName()
+	a.State.Room = (*room).GetName()
 	go a.UpdateState()
 	// room.AddNPC(a.(*actor.NPCInterface))
 	// n := actor.NPCInterface(a)
-	room.AddNPC(a)
+	(*room).AddNPC(a)
 	// room.Streams[a.Name] = &a.Stream
 	// room.NPCs[a.Name] = a
-	room.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
+	(*room).BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
 	a.SendEvent("room", events.ROOMENTER, nil)
-	a.Stream <- events.NewEvent(events.ROOMCHANGED, room.GetName(), "global")
+	a.Stream <- events.NewEvent(events.ROOMCHANGED, (*room).GetName(), "global")
 }
 
 // NewNPC constructor
@@ -72,16 +72,17 @@ func NewNPC(name string, gs actor.StreamInterface, roomName string) *NPC {
 	world := a.World
 	room, _ := world.GetRoom(roomName)
 	// room := *rooml
-	char.State.Room = room.GetName()
+	char.State.Room = (*room).GetName()
 	char.Room = room
 	if n != 0 {
 		db.C("npc").Find(bson.M{"name": char.Name}).One(&char.State)
 		char.State.New = false
 		char.Room, _ = world.GetRoom(char.State.Room)
+		// char.Room = &r
 	}
-	char.Streams["room"] = room.GetStream()
+	char.Streams["room"] = (*room).GetStream()
 	// npci := actor.NPCInterface(char)
-	room.AddNPC(char)
+	(*room).AddNPC(char)
 	// char.Room.Streams[char.Name] = &char.Stream
 	return char
 }

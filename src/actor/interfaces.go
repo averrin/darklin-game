@@ -25,7 +25,7 @@ type StreamInterface interface {
 }
 
 type WorldInterface interface {
-	GetRoom(string) (RoomInterface, bool)
+	GetRoom(string) (*RoomInterface, bool)
 	GetGlobal() *StreamInterface
 	GetTime() *TimeInterface
 	GetDate() time.Time
@@ -57,8 +57,8 @@ type PlayerInterface interface {
 	GetName() string
 	GetStream() *chan *events.Event
 	SetStream(string, *chan *events.Event)
-	GetRoom() RoomInterface
-	ChangeRoom(RoomInterface)
+	GetRoom() (*RoomInterface, bool)
+	ChangeRoom(*RoomInterface)
 	Message(*events.Event)
 	ProcessEvent(*events.Event)
 	SetConnection(*websocket.Conn)
@@ -67,6 +67,6 @@ type PlayerInterface interface {
 
 type NPCInterface interface {
 	GetName() string
-	ChangeRoom(RoomInterface)
+	ChangeRoom(*RoomInterface)
 	GetStream() *chan *events.Event
 }

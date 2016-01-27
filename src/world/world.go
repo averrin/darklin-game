@@ -61,7 +61,7 @@ func (w *World) GetTime() *actor.TimeInterface {
 	return &w.Time
 }
 
-func (w *World) GetRoom(name string) (actor.RoomInterface, bool) {
+func (w *World) GetRoom(name string) (*actor.RoomInterface, bool) {
 	room, ok := w.Rooms[name]
-	return *room, ok
+	return room, ok
 }

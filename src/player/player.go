@@ -105,21 +105,22 @@ func (a *Player) Message(event *events.Event) {
 }
 
 //ChangeRoom - enter to new room
-func (a *Player) ChangeRoom(room actor.RoomInterface) {
-	prevRoom := *a.Room
+func (a *Player) ChangeRoom(room *actor.RoomInterface) {
+	prevRoom, _ := a.GetRoom()
 	if prevRoom != nil {
-		prevRoom.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
-		prevRoom.RemovePlayer(a)
+		(*prevRoom).BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
+		(*prevRoom).RemovePlayer(a)
 	}
-	a.Streams["room"] = room.GetStream()
-	a.Room = &room
-	a.State.Room = room.GetName()
+	a.Streams["room"] = (*room).GetStream()
+	log.Println(room, &room)
+	a.Room = room
+	a.State.Room = (*room).GetName()
 	go a.UpdateState()
-	room.AddPlayer(a)
-	room.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
+	(*room).AddPlayer(a)
+	(*room).BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
 	a.SendEvent("room", events.ROOMENTER, nil)
 	if prevRoom != nil {
-		a.Stream <- events.NewEvent(events.ROOMCHANGED, fmt.Sprintf("Вы здесь: %v", room.GetName()), "global")
+		a.Stream <- events.NewEvent(events.ROOMCHANGED, fmt.Sprintf("Вы здесь: %v", (*room).GetName()), "global")
 	}
 }
 
@@ -151,8 +152,13 @@ func (a *Player) SetConnection(c *websocket.Conn) {
 	a.Connection = c
 }
 
-func (a *Player) GetRoom() actor.RoomInterface {
-	return *a.Room
+func (a *Player) GetRoom() (*actor.RoomInterface, bool) {
+	if a.Room != nil {
+		room := a.Room
+		return room, true
+	} else {
+		return nil, false
+	}
 }
 
 //PlayerState - db saved state

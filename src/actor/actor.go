@@ -93,6 +93,7 @@ func (a *Actor) SendEvent(reciever string, eventType events.EventType, payload i
 
 // SendEventWithSender - fake sender
 func (a *Actor) SendEventWithSender(reciever string, eventType events.EventType, payload interface{}, sender string) {
+	log.Println(a.Streams)
 	event := events.NewEvent(eventType, payload, sender)
 	stream := a.Streams[reciever]
 	*stream <- event
