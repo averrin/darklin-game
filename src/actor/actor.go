@@ -33,10 +33,14 @@ type Subscription struct {
 
 type WorldInterface interface {
 	GetRoom(string) (*RoomInterface, bool)
+	GetDate() time.Time
 }
 
 type RoomInterface interface {
 	BroadcastRoom(events.EventType, interface{}, string)
+	GetStream() *chan *events.Event
+	GetName() string
+	RemoveNPC(string)
 }
 
 // Actor - basic event-driven class

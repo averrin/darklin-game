@@ -1,12 +1,11 @@
 package npc
 
 import "time"
-import "world"
+import "events"
 
 //NewMik - nobody likes darkness
 func NewMik(gs *chan *events.Event) NPC {
-	room := world.WORLD.Rooms["Hall"]
-	mik := NewNPC("Mik Rori", gs, room)
+	mik := NewNPC("Mik Rori", gs, "Hall")
 	// mik.ProcessEvent = mik.Mik
 
 	mik.Handlers[events.ROOMCHANGED] = mik.MikRoomChanged
@@ -28,7 +27,7 @@ func NewMik(gs *chan *events.Event) NPC {
 }
 
 const (
-	MIK_CHANGEROOM EventType = iota
+	MIK_CHANGEROOM events.EventType = iota
 	MIK_SMOKE
 )
 

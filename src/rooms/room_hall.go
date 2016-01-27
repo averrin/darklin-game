@@ -3,12 +3,11 @@ package rooms
 import (
 	"events"
 	"npc"
-	"world"
 )
 
 func NewHall(gs *chan *events.Event) *Area {
 	hall := area.NewArea("Hall", gs)
-	world.WORLD.Rooms["Hall"] = hall
+	hall.World.AddRoom("Hall", hall)
 	hall.Desc = "Это холл. Большая, светлая комната."
 
 	hall.Handlers[events.LIGHT] = hall.HallLight

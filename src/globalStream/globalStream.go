@@ -34,7 +34,8 @@ type GlobalState struct {
 // GlobalStream for global events
 type GlobalStream struct {
 	area.Area
-	State GlobalState
+	State     GlobalState
+	NewPlayer func(string, *chan *events.Event) *area.PlayerInterface
 }
 
 // NewGlobalStream constructor
@@ -187,13 +188,13 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := uuid.New()
-		p := NewPlayer(name, &a.Stream)
-		p.Streams["room"] = &a.Stream
+		p := *a.NewPlayer(name, &a.Stream)
+		p.SetStream("room", &a.Stream)
 		c, err := upgrader.Upgrade(w, r, nil)
-		p.Connection = c
+		p.SetConnection(c)
 		p.Message(events.NewEvent(events.CONNECTED, nil, "global"))
 		p.Message(events.NewEvent(events.SYSTEMMESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
-		a.Players[p] = c
+		a.Players[&p] = c
 		if err != nil {
 			log.Print("upgrade:", err)
 			return
@@ -206,10 +207,11 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 				log.Println(red("Disconnect"), name)
 				// p.Loggedin = false
 				go func() {
-					p.Stream <- events.NewEvent(events.CLOSE, nil, a.Name)
+					stream := *p.GetStream()
+					stream <- events.NewEvent(events.CLOSE, nil, a.Name)
 				}()
-				delete(a.Players, p)
-				delete(a.Streams, p.Name)
+				delete(a.Players, &p)
+				delete(a.Streams, p.GetName())
 				return
 			}
 			line := string(message)
@@ -217,7 +219,9 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 			if line == "" {
 				continue
 			}
-			*p.Streams["room"] <- events.NewEvent(events.COMMAND, line, p.Name)
+			room := *p.GetRoom()
+			stream := *room.GetStream()
+			stream <- events.NewEvent(events.COMMAND, line, p.GetName())
 		}
 	}
 }

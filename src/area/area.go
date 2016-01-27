@@ -25,10 +25,12 @@ type PlayerInterface interface {
 	Live()
 	GetName() string
 	GetStream() *chan *events.Event
+	SetStream(string, *chan *events.Event)
 	GetRoom() *actor.RoomInterface
 	ChangeRoom(*actor.RoomInterface)
 	Message(*events.Event)
 	ProcessEvent(*events.Event)
+	SetConnection(*websocket.Conn)
 }
 
 //area.NewArea constructor

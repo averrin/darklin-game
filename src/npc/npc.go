@@ -1,6 +1,7 @@
 package npc
 
 import (
+	"actor"
 	"events"
 	"fmt"
 
@@ -9,13 +10,14 @@ import (
 
 //Character - room-based actor
 type Character struct {
-	Actor
-	Room  *Area
-	World *WorldInterface
+	actor.Actor
+	Room  *actor.RoomInterface
+	World *actor.WorldInterface
 }
 
 func (a *Character) String() string {
-	return fmt.Sprintf("{Name: %s, Room: %s}", a.Name, a.Room.Name)
+	room := *a.Room
+	return fmt.Sprintf("{Name: %s, Room: %s}", a.Name, room.GetName())
 }
 
 //NPC - just NPC
@@ -44,46 +46,49 @@ func (a *NPC) UpdateState() {
 }
 
 //ChangeRoom - enter to new room
-func (a *NPC) ChangeRoom(room *Area) {
-	a.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name, a.Room)
-	delete(a.Room.Streams, a.Name)
-	delete(a.Room.NPCs, a.Name)
+func (a *NPC) ChangeRoom(rooml *actor.RoomInterface) {
+	room := *rooml
+	prevRoom := *a.Room
+	prevRoom.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
+	prevRoom.RemoveNPC(a.Name)
+	// delete(a.Room.NPCs, a.Name)
 	a.Streams["room"] = &room.Stream
 	a.Room = room
 	a.State.Room = room.Name
 	go a.UpdateState()
 	room.Streams[a.Name] = &a.Stream
 	room.NPCs[a.Name] = a
-	a.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name, a.Room)
+	room.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
 	a.SendEvent("room", events.ROOMENTER, nil)
 	a.Stream <- NewEvent(events.ROOMCHANGED, a.Room.Name, "global")
 }
 
 // NewNPC constructor
-func NewNPC(name string, gs *chan *events.Event, room *Area) NPC {
+func NewNPC(name string, gs *chan *events.Event, roomName string) NPC {
 	a := NewActor(name, gs)
-	actor := new(NPC)
-	actor.Actor = *a
+	char := new(NPC)
+	char.Actor = *a
 	// formatter := NewFormatter()
 	// actor.Formatter = formatter
-	actor.Actor.ProcessEvent = actor.ProcessEvent
-	s := actor.Storage.Session.Copy()
+	char.Actor.ProcessEvent = char.ProcessEvent
+	s := char.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
-	n, _ := db.C("npc").Find(bson.M{"name": actor.Name}).Count()
-	actor.State = *new(CharState)
-	actor.State.New = true
-	actor.State.Name = actor.Name
-	actor.State.Room = room.Name
-	actor.Room = room
+	n, _ := db.C("npc").Find(bson.M{"name": char.Name}).Count()
+	char.State = *new(CharState)
+	char.State.New = true
+	char.State.Name = char.Name
+	room := a.World.GetRoom(roomName)
+	char.State.Room = room.Name
+	char.Room = room
 	if n != 0 {
-		db.C("npc").Find(bson.M{"name": actor.Name}).One(&actor.State)
-		actor.State.New = false
-		actor.Room = actor.World.GetRoom(actor.State.Room)
+		db.C("npc").Find(bson.M{"name": char.Name}).One(&char.State)
+		char.State.New = false
+		char.Room = char.World.GetRoom(char.State.Room)
 	}
-	actor.Streams["room"] = &actor.Room.Stream
-	actor.Room.Streams[actor.Name] = &actor.Stream
-	return *actor
+	char.Streams["room"] = &char.Room.Stream
+	char.Room.Streams[char.Name] = &char.Stream
+	return *char
 }
 
 //ProcessEvent from user or cmd

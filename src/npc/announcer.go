@@ -3,19 +3,17 @@ package npc
 import "fmt"
 import "actor"
 import "events"
-import "world"
 
 // Announcer just someone who do something
 type Announcer struct {
 	actor.Actor
 }
 
-// ConsumeEvent of couse
+// ConsumeEvent for notifiers
 func (a Announcer) ConsumeEvent(event *events.Event) {
 	a.Stream <- event
 }
 
-// NewAnnouncer because i, sucj in golang yet
 func NewAnnouncer(gs *chan *events.Event) *Announcer {
 	a := actor.NewActor("Announcer", gs)
 	announcer := new(Announcer)
@@ -27,9 +25,10 @@ func NewAnnouncer(gs *chan *events.Event) *Announcer {
 // ProcessEvent - i need print something
 func (a Announcer) ProcessEvent(event *events.Event) {
 	switch event.Type {
-	case SECOND:
+	case events.SECOND:
 		a.SendEvent("global", events.MESSAGE, "Every second, mister")
-	case MINUTE:
-		a.SendEvent("global", events.MESSAGE, fmt.Sprintf("Игровое время: %v", world.WORLD.Time.Date.Format("Mon Jan _2 15:04:05 2006")))
+	case events.MINUTE:
+		world := *a.World
+		a.SendEvent("global", events.MESSAGE, fmt.Sprintf("Игровое время: %v", world.GetDate().Format("Mon Jan _2 15:04:05 2006")))
 	}
 }
