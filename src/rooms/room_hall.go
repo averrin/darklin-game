@@ -1,16 +1,14 @@
 package rooms
 
 import (
-	"actor"
 	"events"
 	"npc"
 )
 
 func NewHall(gs *chan *events.Event) *Room {
 	hall := NewRoom("Hall", gs)
-	world := *hall.World
-	room := actor.RoomInterface(hall)
-	world.AddRoom("Hall", &room)
+	world := hall.World
+	world.AddRoom("Hall", hall)
 	hall.Desc = "Это холл. Большая, светлая комната."
 
 	hall.Handlers[events.LIGHT] = hall.HallLight
@@ -21,8 +19,8 @@ func NewHall(gs *chan *events.Event) *Room {
 }
 
 func (a *Room) Init() {
-	world := *a.World
-	gs := *world.GetGlobal()
+	world := a.World
+	gs := world.GetGlobal()
 	mik := npc.NewMik(gs.GetStream())
 	go mik.Live()
 }

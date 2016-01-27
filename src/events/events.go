@@ -48,7 +48,7 @@ type Event struct {
 	Abort     bool
 }
 
-func (event Event) String() string {
+func (event *Event) String() string {
 	return fmt.Sprintf("{Sender: %v; Type: %v; Payload: %v, Abort: %v, ID: '%v', (Delay: %v, Every: %v)}",
 		event.Sender, event.Type, event.Payload, event.Abort, event.ID, event.Delay, event.Every)
 }

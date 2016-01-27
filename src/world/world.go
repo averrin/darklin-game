@@ -16,12 +16,12 @@ type World struct {
 	Time   *timeStream.TimeStream
 }
 
-func NewWorld(gsl *actor.StreamInterface) *World {
+func NewWorld(gs actor.StreamInterface) *World {
 	world := new(World)
-	gs := *gsl
-	world.Global = gsl
-	wi := actor.WorldInterface(world)
-	gs.SetWorld(&wi)
+	// gs := *gsl
+	gs.SetWorld(world)
+	world.Global = &gs
+	log.Println((*world.Global).GetWorld())
 	world.Rooms = make(map[string]*actor.RoomInterface)
 	world.Time = timeStream.NewTimeStream(gs.GetStream(), gs.GetDate())
 	go world.Time.Live()
@@ -45,7 +45,7 @@ func (w *World) Init() {
 	gs.Subscribe(events.MINUTE, &announcer.Actor)
 }
 
-func (w *World) AddRoom(name string, room *actor.RoomInterface) {
+func (w *World) AddRoom(name string, room actor.RoomInterface) {
 	log.Fatal("not implemented")
 }
 
@@ -53,11 +53,11 @@ func (w *World) GetDate() time.Time {
 	return w.Time.Date
 }
 
-func (w *World) GetGlobal() *actor.StreamInterface {
-	return w.Global
+func (w *World) GetGlobal() actor.StreamInterface {
+	return *w.Global
 }
 
-func (w *World) GetRoom(name string) (*actor.RoomInterface, bool) {
+func (w *World) GetRoom(name string) (actor.RoomInterface, bool) {
 	room, ok := w.Rooms[name]
-	return room, ok
+	return *room, ok
 }

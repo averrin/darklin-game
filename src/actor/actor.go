@@ -37,7 +37,8 @@ type Subscription struct {
 
 type StreamInterface interface {
 	Live()
-	SetWorld(*WorldInterface)
+	SetWorld(WorldInterface)
+	GetWorld() WorldInterface
 	GetStream() *chan *events.Event
 	SetStream(string, *chan *events.Event)
 	GetDate() time.Time
@@ -46,10 +47,10 @@ type StreamInterface interface {
 }
 
 type WorldInterface interface {
-	GetRoom(string) (*RoomInterface, bool)
-	GetGlobal() *StreamInterface
+	GetRoom(string) (RoomInterface, bool)
+	GetGlobal() StreamInterface
 	GetDate() time.Time
-	AddRoom(string, *RoomInterface)
+	AddRoom(string, RoomInterface)
 }
 
 //CharState - Basic state
@@ -79,8 +80,8 @@ type RoomInterface interface {
 	GetState() AreaState
 	GetName() string
 	RemoveNPC(string)
-	AddNPC(*NPCInterface)
-	AddPlayer(*PlayerInterface)
+	AddNPC(NPCInterface)
+	AddPlayer(PlayerInterface)
 	SendEventWithSender(string, events.EventType, interface{}, string)
 	GetPendingEvent(string) (*events.Event, bool)
 }
@@ -94,7 +95,7 @@ type Actor struct {
 	ID            string
 	Desc          string
 	Storage       *core.Storage
-	World         *WorldInterface
+	World         WorldInterface
 
 	PendingEvents map[string]*events.Event
 
@@ -109,15 +110,15 @@ type PlayerInterface interface {
 	GetName() string
 	GetStream() *chan *events.Event
 	SetStream(string, *chan *events.Event)
-	GetRoom() *RoomInterface
-	ChangeRoom(*RoomInterface)
+	GetRoom() RoomInterface
+	ChangeRoom(RoomInterface)
 	Message(*events.Event)
 	ProcessEvent(*events.Event)
 	SetConnection(*websocket.Conn)
 }
 
 type NPCInterface interface {
-	ChangeRoom(*RoomInterface)
+	ChangeRoom(RoomInterface)
 	GetStream() *chan *events.Event
 }
 
@@ -143,21 +144,21 @@ func NewActor(name string, gs *chan *events.Event) *Actor {
 }
 
 // SendEvent with type and payload
-func (a Actor) SendEvent(reciever string, eventType events.EventType, payload interface{}) {
+func (a *Actor) SendEvent(reciever string, eventType events.EventType, payload interface{}) {
 	event := events.NewEvent(eventType, payload, a.Name)
 	stream := a.Streams[reciever]
 	*stream <- event
 }
 
 // SendEventWithSender - fake sender
-func (a Actor) SendEventWithSender(reciever string, eventType events.EventType, payload interface{}, sender string) {
+func (a *Actor) SendEventWithSender(reciever string, eventType events.EventType, payload interface{}, sender string) {
 	event := events.NewEvent(eventType, payload, sender)
 	stream := a.Streams[reciever]
 	*stream <- event
 }
 
 // Broadcast - send all
-func (a Actor) Broadcast(eventType events.EventType, payload interface{}, sender string) {
+func (a *Actor) Broadcast(eventType events.EventType, payload interface{}, sender string) {
 	event := events.NewEvent(eventType, payload, sender)
 	defer func() { recover() }()
 	// yellow := color.New(color.FgYellow).SprintFunc()
@@ -173,7 +174,7 @@ func (a Actor) Broadcast(eventType events.EventType, payload interface{}, sender
 }
 
 // ForwardEvent to new reciever
-func (a Actor) ForwardEvent(reciever string, event *events.Event) {
+func (a *Actor) ForwardEvent(reciever string, event *events.Event) {
 	// defer func() { recover() }()
 	// log.Println("event before forwarded", reciever, *a.Streams[reciever])
 	*a.Streams[reciever] <- event
@@ -181,12 +182,12 @@ func (a Actor) ForwardEvent(reciever string, event *events.Event) {
 }
 
 // Subscribe on events
-func (a Actor) Subscribe(eventType events.EventType, subscriber *Actor) {
+func (a *Actor) Subscribe(eventType events.EventType, subscriber *Actor) {
 	a.Subscriptions = append(a.Subscriptions, Subscription{eventType, subscriber})
 }
 
 // NotifySubscribers wgen u have event
-func (a Actor) NotifySubscribers(event *events.Event) {
+func (a *Actor) NotifySubscribers(event *events.Event) {
 	for _, s := range a.Subscriptions {
 		if event.Type == s.Type || s.Type == events.ALL {
 			s.Subscriber.Stream <- event
@@ -200,7 +201,7 @@ func (a *Actor) AddStream(subscriber Actor) {
 }
 
 // Live method for dispatch events
-func (a Actor) Live() {
+func (a *Actor) Live() {
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	a.Storage.DB = s.DB("darklin")
@@ -251,23 +252,27 @@ func (a *Actor) Sleep(duration time.Duration) {
 	log.Fatal("Fix it")
 }
 
-func (a Actor) GetName() string {
+func (a *Actor) GetName() string {
 	return a.Name
 }
 
-func (a Actor) GetStream() *chan *events.Event {
+func (a *Actor) GetStream() *chan *events.Event {
 	return &a.Stream
 }
 
-func (a Actor) GetPendingEvent(name string) (*events.Event, bool) {
+func (a *Actor) GetPendingEvent(name string) (*events.Event, bool) {
 	ev, ok := a.PendingEvents[name]
 	return ev, ok
 }
 
-func (a Actor) SetWorld(w *WorldInterface) {
+func (a *Actor) SetWorld(w WorldInterface) {
 	a.World = w
 }
 
-func (a Actor) SetStream(name string, s *chan *events.Event) {
+func (a *Actor) SetStream(name string, s *chan *events.Event) {
 	a.Streams[name] = s
+}
+
+func (a *Actor) GetWorld() WorldInterface {
+	return a.World
 }

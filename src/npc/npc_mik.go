@@ -4,7 +4,7 @@ import "time"
 import "events"
 
 //NewMik - nobody likes darkness
-func NewMik(gs *chan *events.Event) NPC {
+func NewMik(gs *chan *events.Event) *NPC {
 	mik := NewNPC("Mik Rori", gs, "Hall")
 	// mik.ProcessEvent = mik.Mik
 
@@ -32,7 +32,7 @@ const (
 )
 
 func (a *NPC) MikRoomChanged(event *events.Event) bool {
-	room := *a.Room
+	room := a.Room
 	if !room.GetState().Light {
 		room.BroadcastRoom(events.MESSAGE, "И тут темень!", a.Name)
 	}
@@ -40,19 +40,19 @@ func (a *NPC) MikRoomChanged(event *events.Event) bool {
 }
 
 func (a *NPC) MikRoomEnter(event *events.Event) bool {
-	room := *a.Room
+	room := a.Room
 	room.SendEventWithSender(event.Sender, events.MESSAGE, "Привет.", a.Name)
 	return false
 }
 
 func (a *NPC) MikSmoke(event *events.Event) bool {
-	room := *a.Room
+	room := a.Room
 	room.BroadcastRoom(events.SYSTEMMESSAGE, "*Мик закуривает трубку*", a.Name)
 	return false
 }
 
 func (a *NPC) MikChangeRoom(event *events.Event) bool {
-	world := *a.World
+	world := a.World
 	if a.State.Room == "Hall" {
 		room, _ := world.GetRoom("second")
 		a.ChangeRoom(room)
@@ -64,7 +64,7 @@ func (a *NPC) MikChangeRoom(event *events.Event) bool {
 }
 
 func (a *NPC) MikLight(event *events.Event) bool {
-	room := *a.Room
+	room := a.Room
 	if !event.Payload.(bool) {
 		room.BroadcastRoom(events.MESSAGE, "Эй, кто выключил свет?", a.Name)
 		room.BroadcastRoom(events.SYSTEMMESSAGE, "*шорох, шаги, чирканье спичек*", a.Name)

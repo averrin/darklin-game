@@ -39,7 +39,7 @@ type GlobalStream struct {
 }
 
 // NewGlobalStream constructor
-func NewGlobalStream() GlobalStream {
+func NewGlobalStream() *GlobalStream {
 	gs := make(chan *events.Event, 100)
 	a := area.NewArea("global", &gs)
 	stream := new(GlobalStream)
@@ -58,7 +58,7 @@ func NewGlobalStream() GlobalStream {
 		stream.State.New = false
 		stream.State.Date = stream.State.Date.In(time.UTC)
 	}
-	return *stream
+	return stream
 }
 
 //ProcessEvent in global stream
@@ -85,7 +85,7 @@ func (a *GlobalStream) ProcessEvent(event *events.Event) {
 		log.Println(yellow("MESSAGE:"), event.Payload)
 		if event.Sender != "Announcer" {
 			p := *a.GetPlayer(event.Sender)
-			room := *p.GetRoom()
+			room := p.GetRoom()
 			room.BroadcastRoom(events.MESSAGE, event.Payload, event.Sender)
 		} else {
 			a.Broadcast(events.MESSAGE, event.Payload, event.Sender)
@@ -143,7 +143,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 		go func() {
 			if len(tokens) == 2 {
 				p := *a.GetPlayer(event.Sender)
-				w := *a.World
+				w := a.World
 				room, ok := w.GetRoom(tokens[1])
 				if ok {
 					if p.GetRoom() == room {
@@ -182,7 +182,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 }
 
 // GetPlayerHandler - handle user input
-func (a GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
+func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
 	formatter := a.Formatter
 	red := formatter.Red
 
@@ -219,13 +219,13 @@ func (a GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Req
 			if line == "" {
 				continue
 			}
-			room := *p.GetRoom()
+			room := p.GetRoom()
 			stream := *room.GetStream()
 			stream <- events.NewEvent(events.COMMAND, line, p.GetName())
 		}
 	}
 }
 
-func (a GlobalStream) GetDate() time.Time {
+func (a *GlobalStream) GetDate() time.Time {
 	return a.State.Date
 }

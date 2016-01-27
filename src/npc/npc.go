@@ -11,12 +11,12 @@ import (
 //Character - room-based actor
 type Character struct {
 	actor.Actor
-	Room  *actor.RoomInterface
-	World *actor.WorldInterface
+	Room  actor.RoomInterface
+	World actor.WorldInterface
 }
 
 func (a *Character) String() string {
-	room := *a.Room
+	room := a.Room
 	return fmt.Sprintf("{Name: %s, Room: %s}", a.Name, room.GetName())
 }
 
@@ -35,19 +35,18 @@ func (a *NPC) UpdateState() {
 }
 
 //ChangeRoom - enter to new room
-func (a *NPC) ChangeRoom(rooml *actor.RoomInterface) {
-	room := *rooml
-	prevRoom := *a.Room
+func (a *NPC) ChangeRoom(room actor.RoomInterface) {
+	prevRoom := a.Room
 	prevRoom.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
 	prevRoom.RemoveNPC(a.Name)
 	// delete(a.Room.NPCs, a.Name)
 	a.Streams["room"] = room.GetStream()
-	a.Room = &room
+	a.Room = room
 	a.State.Room = room.GetName()
 	go a.UpdateState()
 	// room.AddNPC(a.(*actor.NPCInterface))
-	n := actor.NPCInterface(a)
-	room.AddNPC(&n)
+	// n := actor.NPCInterface(a)
+	room.AddNPC(a)
 	// room.Streams[a.Name] = &a.Stream
 	// room.NPCs[a.Name] = a
 	room.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
@@ -56,7 +55,7 @@ func (a *NPC) ChangeRoom(rooml *actor.RoomInterface) {
 }
 
 // NewNPC constructor
-func NewNPC(name string, gs *chan *events.Event, roomName string) NPC {
+func NewNPC(name string, gs *chan *events.Event, roomName string) *NPC {
 	a := actor.NewActor(name, gs)
 	char := new(NPC)
 	char.Actor = *a
@@ -70,21 +69,21 @@ func NewNPC(name string, gs *chan *events.Event, roomName string) NPC {
 	char.State = *new(actor.CharState)
 	char.State.New = true
 	char.State.Name = char.Name
-	world := *a.World
-	rooml, _ := world.GetRoom(roomName)
-	room := *rooml
+	world := a.World
+	room, _ := world.GetRoom(roomName)
+	// room := *rooml
 	char.State.Room = room.GetName()
-	char.Room = rooml
+	char.Room = room
 	if n != 0 {
 		db.C("npc").Find(bson.M{"name": char.Name}).One(&char.State)
 		char.State.New = false
 		char.Room, _ = world.GetRoom(char.State.Room)
 	}
 	char.Streams["room"] = room.GetStream()
-	npci := actor.NPCInterface(char)
-	room.AddNPC(&npci)
+	// npci := actor.NPCInterface(char)
+	room.AddNPC(char)
 	// char.Room.Streams[char.Name] = &char.Stream
-	return *char
+	return char
 }
 
 //ProcessEvent from user or cmd
@@ -107,8 +106,4 @@ func (a *NPC) ProcessEvent(event *events.Event) {
 			_ = handler(event)
 		}
 	}
-}
-
-func (a *NPC) GetStream() *chan *events.Event {
-	return &a.Stream
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"actor"
 	core "core"
 	"flag"
 	"fmt"
@@ -24,9 +23,8 @@ func main() {
 	defer core.SESSION.Close()
 	core.SESSION.SetMode(mgo.Monotonic, true)
 
-	gss := globalStream.NewGlobalStream()
-	gs := actor.StreamInterface(gss)
-	world := world.NewWorld(&gs)
+	gs := globalStream.NewGlobalStream()
+	world := world.NewWorld(gs)
 	world.Init()
 
 	gs.SetStream("time", &world.Time.Stream)

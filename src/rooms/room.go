@@ -10,14 +10,14 @@ import (
 
 type Room struct {
 	area.Area
-	NPCs map[string]*actor.NPCInterface
+	NPCs map[string]actor.NPCInterface
 }
 
 func NewRoom(name string, gs *chan *events.Event) *Room {
 	a := area.NewArea(name, gs)
 	room := new(Room)
 	room.Area = *a
-	room.NPCs = make(map[string]*actor.NPCInterface)
+	room.NPCs = make(map[string]actor.NPCInterface)
 	return room
 }
 
@@ -25,7 +25,7 @@ func (a *Room) String() string {
 	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d}", a.Name, len(a.Players), len(a.NPCs))
 }
 
-func (a *Room) AddNPC(*actor.NPCInterface) {
+func (a *Room) AddNPC(actor.NPCInterface) {
 	log.Fatal("not implemented")
 }
 
@@ -33,7 +33,7 @@ func (a *Room) RemoveNPC(name string) {
 	log.Fatal("not implemented")
 }
 
-func (a *Room) AddPlayer(*actor.PlayerInterface) {
+func (a *Room) AddPlayer(actor.PlayerInterface) {
 	log.Fatal("not implemented")
 }
 
@@ -53,7 +53,7 @@ func (a *Room) BroadcastRoom(eventType events.EventType, payload interface{}, se
 		if name == sender {
 			continue
 		}
-		stream := *(*npc).GetStream()
+		stream := *npc.GetStream()
 		stream <- event
 	}
 }
