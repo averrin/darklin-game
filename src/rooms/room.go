@@ -1,23 +1,40 @@
 package rooms
 
 import (
+	"actor"
 	"area"
+	"events"
 	"fmt"
-	"npc"
+	"log"
 )
 
 type Room struct {
 	area.Area
-	NPCs map[string]*npc.NPC
+	NPCs map[string]*actor.NPCInterface
 }
 
-func NewRoom() *Room {
-	room := area.NewArea()
-	room.NPCs = make(map[string]*npc.NPC)
+func NewRoom(name string, gs *chan *events.Event) *Room {
+	a := area.NewArea(name, gs)
+	room := new(Room)
+	room.Area = *a
+	room.NPCs = make(map[string]*actor.NPCInterface)
+	return room
 }
 
 func (a *Room) String() string {
 	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d}", a.Name, len(a.Players), len(a.NPCs))
+}
+
+func (a *Room) AddNPC(*actor.NPCInterface) {
+	log.Fatal("not implemented")
+}
+
+func (a *Room) RemoveNPC(name string) {
+	log.Fatal("not implemented")
+}
+
+func (a *Room) AddPlayer(*actor.PlayerInterface) {
+	log.Fatal("not implemented")
 }
 
 // BroadcastRoom - send all
@@ -36,6 +53,11 @@ func (a *Room) BroadcastRoom(eventType events.EventType, payload interface{}, se
 		if name == sender {
 			continue
 		}
-		npc.Stream <- event
+		stream := *(*npc).GetStream()
+		stream <- event
 	}
+}
+
+func (a *Room) GetState() actor.AreaState {
+	return a.State
 }

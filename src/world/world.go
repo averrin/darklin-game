@@ -1,32 +1,28 @@
 package world
 
 import (
+	"actor"
 	"area"
 	"core"
 	"events"
+	"log"
 	"rooms"
 	"time"
 	"timeStream"
 )
 
-type StreamInterface interface {
-	Live()
-	SetWorld(*World)
-	GetStream() *chan *events.Event
-	GetDate() time.Time
-}
-
 type World struct {
 	Rooms  map[string]*area.Area
-	Global *StreamInterface
+	Global *actor.StreamInterface
 	Time   *timeStream.TimeStream
 }
 
-func NewWorld(gsl *StreamInterface) *World {
+func NewWorld(gsl *actor.StreamInterface) *World {
 	world := new(World)
 	gs := *gsl
 	world.Global = gsl
-	gs.SetWorld(world)
+	wi := actor.WorldInterface(world)
+	gs.SetWorld(&wi)
 	world.Rooms = make(map[string]*area.Area)
 	world.Time = timeStream.NewTimeStream(gs.GetStream(), gs.GetDate())
 	go world.Time.Live()
@@ -49,4 +45,19 @@ func (w *World) Init() {
 	gs.Subscribe(events.MINUTE, &announcer.Actor)
 }
 
-var WORLD *World
+func (w *World) AddRoom(name string, room *actor.RoomInterface) {
+	log.Fatal("not implemented")
+}
+
+func (w *World) GetDate() time.Time {
+	return w.Time.Date
+}
+
+func (w *World) GetGlobal() *actor.StreamInterface {
+	return w.Global
+}
+
+func (w *World) GetRoom(name string) (*actor.RoomInterface, bool) {
+	room, ok := w.Rooms[name]
+	return room, ok
+}

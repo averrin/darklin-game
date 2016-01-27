@@ -1,13 +1,16 @@
 package rooms
 
 import (
+	"actor"
 	"events"
 	"npc"
 )
 
-func NewHall(gs *chan *events.Event) *Area {
-	hall := area.NewArea("Hall", gs)
-	hall.World.AddRoom("Hall", hall)
+func NewHall(gs *chan *events.Event) *Room {
+	hall := NewRoom("Hall", gs)
+	world := *hall.World
+	room := actor.RoomInterface(hall)
+	world.AddRoom("Hall", &room)
 	hall.Desc = "Это холл. Большая, светлая комната."
 
 	hall.Handlers[events.LIGHT] = hall.HallLight
@@ -17,14 +20,16 @@ func NewHall(gs *chan *events.Event) *Area {
 	return hall
 }
 
-func (a *Area) Init() {
-	mik := npc.NewMik(&world.WORLD.Global.Stream)
+func (a *Room) Init() {
+	world := *a.World
+	gs := *world.GetGlobal()
+	mik := npc.NewMik(gs.GetStream())
 	go mik.Live()
 }
 
-func (a *Area) HallLight(event *events.Event) bool {
+func (a *Room) HallLight(event *events.Event) bool {
 	if !event.Payload.(bool) {
-		a.BroadcastRoom(events.SYSTEMMESSAGE, "Стало как-то неуютно", a.Name, a)
+		a.BroadcastRoom(events.SYSTEMMESSAGE, "Стало как-то неуютно", a.Name)
 	}
 	return false
 }

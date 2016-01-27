@@ -14,10 +14,10 @@ func NewMik(gs *chan *events.Event) NPC {
 	mik.Handlers[MIK_CHANGEROOM] = mik.MikChangeRoom
 	mik.Handlers[events.LIGHT] = mik.MikLight
 
-	che := NewEvent(MIK_CHANGEROOM, nil, mik.Name)
+	che := events.NewEvent(MIK_CHANGEROOM, nil, mik.Name)
 	che.ID = "Mik_change_room"
 	che.Every = 2 * time.Minute
-	cme := NewEvent(MIK_SMOKE, nil, mik.Name)
+	cme := events.NewEvent(MIK_SMOKE, nil, mik.Name)
 	cme.Every = 10 * time.Minute
 	go func() {
 		mik.Stream <- che
@@ -32,46 +32,54 @@ const (
 )
 
 func (a *NPC) MikRoomChanged(event *events.Event) bool {
-	if !a.Room.State.Light {
-		a.BroadcastRoom(ceventsore.MESSAGE, "И тут темень!", a.Name, a.Room)
+	room := *a.Room
+	if !room.GetState().Light {
+		room.BroadcastRoom(events.MESSAGE, "И тут темень!", a.Name)
 	}
 	return false
 }
 
 func (a *NPC) MikRoomEnter(event *events.Event) bool {
-	a.Room.SendEventWithSender(event.Sender, events.MESSAGE, "Привет.", a.Name)
+	room := *a.Room
+	room.SendEventWithSender(event.Sender, events.MESSAGE, "Привет.", a.Name)
 	return false
 }
 
 func (a *NPC) MikSmoke(event *events.Event) bool {
-	a.BroadcastRoom(events.SYSTEMMESSAGE, "*Мик закуривает трубку*", a.Name, a.Room)
+	room := *a.Room
+	room.BroadcastRoom(events.SYSTEMMESSAGE, "*Мик закуривает трубку*", a.Name)
 	return false
 }
 
 func (a *NPC) MikChangeRoom(event *events.Event) bool {
+	world := *a.World
 	if a.State.Room == "Hall" {
-		a.ChangeRoom(world.WORLD.Rooms["second"])
+		room, _ := world.GetRoom("second")
+		a.ChangeRoom(room)
 	} else {
-		a.ChangeRoom(world.WORLD.Rooms["Hall"])
+		room, _ := world.GetRoom("Hall")
+		a.ChangeRoom(room)
 	}
 	return false
 }
 
 func (a *NPC) MikLight(event *events.Event) bool {
+	room := *a.Room
 	if !event.Payload.(bool) {
-		a.BroadcastRoom(events.MESSAGE, "Эй, кто выключил свет?", a.Name, a.Room)
-		a.BroadcastRoom(events.SYSTEMMESSAGE, "*шорох, шаги, чирканье спичек*", a.Name, a.Room)
-		ne := NewEvent(events.COMMAND, "light on", a.Name)
+		room.BroadcastRoom(events.MESSAGE, "Эй, кто выключил свет?", a.Name)
+		room.BroadcastRoom(events.SYSTEMMESSAGE, "*шорох, шаги, чирканье спичек*", a.Name)
+		ne := events.NewEvent(events.COMMAND, "light on", a.Name)
 		ne.ID = "Mik_light_on"
 		ne.Delay = 5 * time.Second
-		a.Room.Stream <- ne
+		stream := *room.GetStream()
+		stream <- ne
 	} else {
-		ev, ok := a.Room.PendingEvents["Mik_light_on"]
+		ev, ok := room.GetPendingEvent("Mik_light_on")
 		if ok {
-			a.BroadcastRoom(events.MESSAGE, "То-то же!", a.Name, a.Room)
+			room.BroadcastRoom(events.MESSAGE, "То-то же!", a.Name)
 			ev.Abort = true
 		} else {
-			a.BroadcastRoom(events.MESSAGE, "Так лучше!", a.Name, a.Room)
+			room.BroadcastRoom(events.MESSAGE, "Так лучше!", a.Name)
 		}
 	}
 	return false

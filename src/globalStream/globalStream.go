@@ -1,6 +1,7 @@
 package globalStream
 
 import (
+	"actor"
 	"area"
 	"events"
 	"fmt"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/pborman/uuid"
 
-	// "golang.org/x/net/websocket"
 	"github.com/gorilla/websocket"
 )
 
@@ -35,7 +35,7 @@ type GlobalState struct {
 type GlobalStream struct {
 	area.Area
 	State     GlobalState
-	NewPlayer func(string, *chan *events.Event) *area.PlayerInterface
+	NewPlayer func(string, *chan *events.Event) *actor.PlayerInterface
 }
 
 // NewGlobalStream constructor
@@ -127,7 +127,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 		}
 	case "time":
 		if event.Sender == "cmd" {
-			log.Println("TODO: fix it")
+			log.Fatal("TODO: fix it")
 			// log.Println(fmt.Sprintf("Date: %v", world.WORLD.Time.Date))
 		} else {
 			go a.SendEvent("time", events.INFO, *a.Streams[event.Sender])

@@ -16,21 +16,9 @@ import (
 //Area - room for players
 type Area struct {
 	actor.Actor
-	Players   map[*PlayerInterface]*websocket.Conn
+	Players   map[*actor.PlayerInterface]*websocket.Conn
 	Formatter core.Formatter
-	State     AreaState
-}
-
-type PlayerInterface interface {
-	Live()
-	GetName() string
-	GetStream() *chan *events.Event
-	SetStream(string, *chan *events.Event)
-	GetRoom() *actor.RoomInterface
-	ChangeRoom(*actor.RoomInterface)
-	Message(*events.Event)
-	ProcessEvent(*events.Event)
-	SetConnection(*websocket.Conn)
+	State     actor.AreaState
 }
 
 //area.NewArea constructor
@@ -38,7 +26,7 @@ func NewArea(name string, gs *chan *events.Event) *Area {
 	a := actor.NewActor(name, gs)
 	area := new(Area)
 	area.Actor = *a
-	area.Players = make(map[*PlayerInterface]*websocket.Conn)
+	area.Players = make(map[*actor.PlayerInterface]*websocket.Conn)
 	formatter := core.NewFormatter()
 	area.Formatter = formatter
 	area.Actor.ProcessEvent = area.ProcessEvent
@@ -46,7 +34,7 @@ func NewArea(name string, gs *chan *events.Event) *Area {
 	defer s.Close()
 	db := s.DB("darklin")
 	n, _ := db.C("rooms").Find(bson.M{"name": area.Name}).Count()
-	area.State = *new(AreaState)
+	area.State = *new(actor.AreaState)
 	area.State.New = true
 	area.State.Light = true
 	area.State.Name = area.Name
@@ -151,23 +139,13 @@ func (a *Area) UpdateState() {
 	db.C("rooms").Upsert(bson.M{"name": a.Name}, a.State)
 }
 
-//AreaState - db saved state
-type AreaState struct {
-	ID   bson.ObjectId `bson:"_id,omitempty"`
-	Name string
-
-	Light bool
-
-	New bool
-}
-
 //GetPlayer by name
-func (a *Area) GetPlayer(name string) *PlayerInterface {
+func (a *Area) GetPlayer(name string) *actor.PlayerInterface {
 	for v := range a.Players {
 		p := *v
 		if p.GetName() == name {
 			return &p
 		}
 	}
-	return new(PlayerInterface)
+	return new(actor.PlayerInterface)
 }

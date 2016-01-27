@@ -6,6 +6,9 @@ import (
 	"expvar"
 	"log"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -31,16 +34,51 @@ type Subscription struct {
 	Subscriber *Actor
 }
 
+type StreamInterface interface {
+	Live()
+	SetWorld(*WorldInterface)
+	GetStream() *chan *events.Event
+	GetDate() time.Time
+}
+
 type WorldInterface interface {
 	GetRoom(string) (*RoomInterface, bool)
+	GetGlobal() *StreamInterface
 	GetDate() time.Time
+	AddRoom(string, *RoomInterface)
+}
+
+//CharState - Basic state
+type CharState struct {
+	ID   bson.ObjectId `bson:"_id,omitempty"`
+	Name string
+
+	Room string
+	HP   int
+
+	New bool
+}
+
+//AreaState - db saved state
+type AreaState struct {
+	ID   bson.ObjectId `bson:"_id,omitempty"`
+	Name string
+
+	Light bool
+
+	New bool
 }
 
 type RoomInterface interface {
 	BroadcastRoom(events.EventType, interface{}, string)
 	GetStream() *chan *events.Event
+	GetState() AreaState
 	GetName() string
 	RemoveNPC(string)
+	AddNPC(*NPCInterface)
+	AddPlayer(*PlayerInterface)
+	SendEventWithSender(string, events.EventType, interface{}, string)
+	GetPendingEvent(string) (*events.Event, bool)
 }
 
 // Actor - basic event-driven class
@@ -60,6 +98,23 @@ type Actor struct {
 	CommandHandlers map[string]func(string) bool
 	ProcessEvent    func(event *events.Event)
 	ProcessCommand  func(event *events.Event)
+}
+
+type PlayerInterface interface {
+	Live()
+	GetName() string
+	GetStream() *chan *events.Event
+	SetStream(string, *chan *events.Event)
+	GetRoom() *RoomInterface
+	ChangeRoom(*RoomInterface)
+	Message(*events.Event)
+	ProcessEvent(*events.Event)
+	SetConnection(*websocket.Conn)
+}
+
+type NPCInterface interface {
+	ChangeRoom(*RoomInterface)
+	GetStream() *chan *events.Event
 }
 
 //String func for plain actor
@@ -190,4 +245,17 @@ func (a *Actor) ProcessEventAbstract(event *events.Event) {
 func (a *Actor) ProcessCommandAbstract(event *events.Event) {}
 func (a *Actor) Sleep(duration time.Duration) {
 	log.Fatal("Fix it")
+}
+
+func (a *Actor) GetName() string {
+	return a.Name
+}
+
+func (a *Actor) GetStream() *chan *events.Event {
+	return &a.Stream
+}
+
+func (a *Actor) GetPendingEvent(name string) (*events.Event, bool) {
+	ev, ok := a.PendingEvents[name]
+	return ev, ok
 }

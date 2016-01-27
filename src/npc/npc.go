@@ -23,18 +23,7 @@ func (a *Character) String() string {
 //NPC - just NPC
 type NPC struct {
 	Character
-	State CharState
-}
-
-//CharState - Basic state
-type CharState struct {
-	ID   bson.ObjectId `bson:"_id,omitempty"`
-	Name string
-
-	Room string
-	HP   int
-
-	New bool
+	State actor.CharState
 }
 
 //UpdateState - save state into db
@@ -52,20 +41,23 @@ func (a *NPC) ChangeRoom(rooml *actor.RoomInterface) {
 	prevRoom.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
 	prevRoom.RemoveNPC(a.Name)
 	// delete(a.Room.NPCs, a.Name)
-	a.Streams["room"] = &room.Stream
-	a.Room = room
-	a.State.Room = room.Name
+	a.Streams["room"] = room.GetStream()
+	a.Room = &room
+	a.State.Room = room.GetName()
 	go a.UpdateState()
-	room.Streams[a.Name] = &a.Stream
-	room.NPCs[a.Name] = a
+	// room.AddNPC(a.(*actor.NPCInterface))
+	n := actor.NPCInterface(a)
+	room.AddNPC(&n)
+	// room.Streams[a.Name] = &a.Stream
+	// room.NPCs[a.Name] = a
 	room.BroadcastRoom(events.ROOMENTER, "Вошел в комнату", a.Name)
 	a.SendEvent("room", events.ROOMENTER, nil)
-	a.Stream <- NewEvent(events.ROOMCHANGED, a.Room.Name, "global")
+	a.Stream <- events.NewEvent(events.ROOMCHANGED, room.GetName(), "global")
 }
 
 // NewNPC constructor
 func NewNPC(name string, gs *chan *events.Event, roomName string) NPC {
-	a := NewActor(name, gs)
+	a := actor.NewActor(name, gs)
 	char := new(NPC)
 	char.Actor = *a
 	// formatter := NewFormatter()
@@ -75,24 +67,28 @@ func NewNPC(name string, gs *chan *events.Event, roomName string) NPC {
 	defer s.Close()
 	db := s.DB("darklin")
 	n, _ := db.C("npc").Find(bson.M{"name": char.Name}).Count()
-	char.State = *new(CharState)
+	char.State = *new(actor.CharState)
 	char.State.New = true
 	char.State.Name = char.Name
-	room := a.World.GetRoom(roomName)
-	char.State.Room = room.Name
-	char.Room = room
+	world := *a.World
+	rooml, _ := world.GetRoom(roomName)
+	room := *rooml
+	char.State.Room = room.GetName()
+	char.Room = rooml
 	if n != 0 {
 		db.C("npc").Find(bson.M{"name": char.Name}).One(&char.State)
 		char.State.New = false
-		char.Room = char.World.GetRoom(char.State.Room)
+		char.Room, _ = world.GetRoom(char.State.Room)
 	}
-	char.Streams["room"] = &char.Room.Stream
-	char.Room.Streams[char.Name] = &char.Stream
+	char.Streams["room"] = room.GetStream()
+	npci := actor.NPCInterface(char)
+	room.AddNPC(&npci)
+	// char.Room.Streams[char.Name] = &char.Stream
 	return *char
 }
 
 //ProcessEvent from user or cmd
-func (a *NPC) ProcessEvent(event *Event) {
+func (a *NPC) ProcessEvent(event *events.Event) {
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	// yellow := formatter.Yellow
@@ -111,4 +107,8 @@ func (a *NPC) ProcessEvent(event *Event) {
 			_ = handler(event)
 		}
 	}
+}
+
+func (a *NPC) GetStream() *chan *events.Event {
+	return &a.Stream
 }
