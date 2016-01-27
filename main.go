@@ -1,6 +1,7 @@
 package main
 
 import (
+	"actor"
 	core "core"
 	"flag"
 	"fmt"
@@ -23,11 +24,12 @@ func main() {
 	defer core.SESSION.Close()
 	core.SESSION.SetMode(mgo.Monotonic, true)
 
-	gs := globalStream.NewGlobalStream()
-	world.WORLD = world.NewWorld(&gs)
-	world.WORLD.Init()
+	gss := globalStream.NewGlobalStream()
+	gs := actor.StreamInterface(gss)
+	world := world.NewWorld(&gs)
+	world.Init()
 
-	gs.Streams["time"] = &world.WORLD.Time.Stream
+	gs.SetStream("time", &world.Time.Stream)
 
 	http.HandleFunc("/ws", gs.GetPlayerHandler())
 
@@ -43,6 +45,6 @@ func main() {
 		gs.Live()
 	} else {
 		go gs.Live()
-		core.RunShell(&gs.Stream)
+		core.RunShell(gs.GetStream())
 	}
 }

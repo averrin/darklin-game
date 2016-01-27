@@ -182,7 +182,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 }
 
 // GetPlayerHandler - handle user input
-func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
+func (a GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
 	formatter := a.Formatter
 	red := formatter.Red
 
@@ -224,4 +224,8 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 			stream <- events.NewEvent(events.COMMAND, line, p.GetName())
 		}
 	}
+}
+
+func (a GlobalStream) GetDate() time.Time {
+	return a.State.Date
 }

@@ -2,17 +2,16 @@ package world
 
 import (
 	"actor"
-	"area"
-	"core"
 	"events"
 	"log"
+	"npc"
 	"rooms"
 	"time"
 	"timeStream"
 )
 
 type World struct {
-	Rooms  map[string]*area.Area
+	Rooms  map[string]*actor.RoomInterface
 	Global *actor.StreamInterface
 	Time   *timeStream.TimeStream
 }
@@ -23,7 +22,7 @@ func NewWorld(gsl *actor.StreamInterface) *World {
 	world.Global = gsl
 	wi := actor.WorldInterface(world)
 	gs.SetWorld(&wi)
-	world.Rooms = make(map[string]*area.Area)
+	world.Rooms = make(map[string]*actor.RoomInterface)
 	world.Time = timeStream.NewTimeStream(gs.GetStream(), gs.GetDate())
 	go world.Time.Live()
 
@@ -32,13 +31,14 @@ func NewWorld(gsl *actor.StreamInterface) *World {
 
 func (w *World) Init() {
 	gs := *w.Global
-	room2 := area.NewArea("second", gs.GetStream())
+	room2 := rooms.NewRoom("second", gs.GetStream())
 	room2.Desc = "Абстрактная комната, не имеющая индивидуальности."
 	go room2.Live()
-	w.Rooms["second"] = room2
-	hall := rooms.NewHall(&gs.Stream)
+	ri := actor.RoomInterface(room2)
+	w.Rooms["second"] = &ri
+	hall := rooms.NewHall(gs.GetStream())
 	hall.Init()
-	announcer := core.NewAnnouncer(&gs.Stream)
+	announcer := npc.NewAnnouncer(gs.GetStream())
 	go announcer.Live()
 
 	// gs.Subscribe(SECOND, announcer)

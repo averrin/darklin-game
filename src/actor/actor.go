@@ -5,6 +5,7 @@ import (
 	"events"
 	"expvar"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -38,7 +39,10 @@ type StreamInterface interface {
 	Live()
 	SetWorld(*WorldInterface)
 	GetStream() *chan *events.Event
+	SetStream(string, *chan *events.Event)
 	GetDate() time.Time
+	Subscribe(events.EventType, *Actor)
+	GetPlayerHandler() func(http.ResponseWriter, *http.Request)
 }
 
 type WorldInterface interface {
@@ -177,7 +181,7 @@ func (a Actor) ForwardEvent(reciever string, event *events.Event) {
 }
 
 // Subscribe on events
-func (a *Actor) Subscribe(eventType events.EventType, subscriber *Actor) {
+func (a Actor) Subscribe(eventType events.EventType, subscriber *Actor) {
 	a.Subscriptions = append(a.Subscriptions, Subscription{eventType, subscriber})
 }
 
@@ -196,7 +200,7 @@ func (a *Actor) AddStream(subscriber Actor) {
 }
 
 // Live method for dispatch events
-func (a *Actor) Live() {
+func (a Actor) Live() {
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	a.Storage.DB = s.DB("darklin")
@@ -247,15 +251,23 @@ func (a *Actor) Sleep(duration time.Duration) {
 	log.Fatal("Fix it")
 }
 
-func (a *Actor) GetName() string {
+func (a Actor) GetName() string {
 	return a.Name
 }
 
-func (a *Actor) GetStream() *chan *events.Event {
+func (a Actor) GetStream() *chan *events.Event {
 	return &a.Stream
 }
 
-func (a *Actor) GetPendingEvent(name string) (*events.Event, bool) {
+func (a Actor) GetPendingEvent(name string) (*events.Event, bool) {
 	ev, ok := a.PendingEvents[name]
 	return ev, ok
+}
+
+func (a Actor) SetWorld(w *WorldInterface) {
+	a.World = w
+}
+
+func (a Actor) SetStream(name string, s *chan *events.Event) {
+	a.Streams[name] = s
 }
