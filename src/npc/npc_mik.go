@@ -1,9 +1,7 @@
 package npc
 
-import (
-	"log"
-	"time"
-)
+import "time"
+
 import "events"
 import "actor"
 
@@ -45,7 +43,7 @@ func (a *NPC) MikRoomChanged(event *events.Event) bool {
 
 func (a *NPC) MikRoomEnter(event *events.Event) bool {
 	room := *a.Room
-	log.Println(room)
+	// log.Println(room)
 	room.SendEventWithSender(event.Sender, events.MESSAGE, "Привет.", a.Name)
 	return false
 }

@@ -33,17 +33,20 @@ type WorldInterface interface {
 }
 
 type TimeInterface interface {
+	Live()
 	Sleep(time.Duration)
 	GetDate() time.Time
 	GetStream() *chan *events.Event
-	Live()
 }
 
 type RoomInterface interface {
+	Live()
+	Init()
 	BroadcastRoom(events.EventType, interface{}, string)
 	GetStream() *chan *events.Event
 	GetState() AreaState
 	GetName() string
+	GetDesc() string
 	RemoveNPC(string)
 	AddNPC(NPCInterface)
 	AddPlayer(PlayerInterface)
@@ -66,6 +69,7 @@ type PlayerInterface interface {
 }
 
 type NPCInterface interface {
+	Live()
 	GetName() string
 	ChangeRoom(*RoomInterface)
 	GetStream() *chan *events.Event

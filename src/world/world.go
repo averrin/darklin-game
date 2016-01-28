@@ -37,6 +37,9 @@ func (w *World) Init() {
 	// ri := actor.RoomInterface(room2)
 	// w.Rooms["second"] = room2
 	hall := rooms.NewHall(gs)
+	// room, _ := w.GetRoom(hall.Name)
+	// log.Println((*room).GetDesc())
+	go hall.Live()
 	hall.Init()
 	announcer := npc.NewAnnouncer(gs)
 	go announcer.Live()

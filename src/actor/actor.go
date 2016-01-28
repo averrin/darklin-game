@@ -50,7 +50,6 @@ type Actor struct {
 	Streams       map[string]*chan *events.Event
 	Name          string
 	ID            string
-	Desc          string
 	Storage       *core.Storage
 	World         WorldInterface
 
@@ -93,7 +92,7 @@ func (a *Actor) SendEvent(reciever string, eventType events.EventType, payload i
 
 // SendEventWithSender - fake sender
 func (a *Actor) SendEventWithSender(reciever string, eventType events.EventType, payload interface{}, sender string) {
-	log.Println(a.Streams)
+	// log.Println(a.Streams)
 	event := events.NewEvent(eventType, payload, sender)
 	stream := a.Streams[reciever]
 	*stream <- event
@@ -144,6 +143,9 @@ func (a *Actor) AddStream(subscriber Actor) {
 
 // Live method for dispatch events
 func (a *Actor) Live() {
+	// if a.Name == "Hall" {
+	// log.Println(a)
+	// }
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	a.Storage.DB = s.DB("darklin")

@@ -7,14 +7,13 @@ import (
 )
 
 func NewHall(gs actor.StreamInterface) *Room {
-	hall := NewRoom("Hall", gs)
+	hall := NewRoom("Hall", "Это холл. Большая, светлая комната.", gs)
 	world := hall.World
-	hall.Desc = "Это холл. Большая, светлая комната."
 
 	hall.Handlers[events.LIGHT] = hall.HallLight
 
 	world.AddRoom("Hall", &hall)
-	go hall.Live()
+	// go hall.Live()
 
 	return &hall
 }
