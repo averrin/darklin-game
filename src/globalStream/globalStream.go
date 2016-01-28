@@ -43,7 +43,7 @@ func NewGlobalStream() *GlobalStream {
 	stream := new(GlobalStream)
 	stream.Stream = make(chan *events.Event, 100)
 	a := area.NewArea("global", stream)
-	stream.Area = *a
+	stream.Area = a
 	s := stream.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")

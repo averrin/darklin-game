@@ -18,7 +18,7 @@ type TimeStream struct {
 func NewTimeStream(gs actor.StreamInterface, date time.Time) *TimeStream {
 	a := actor.NewActor("time", gs)
 	stream := new(TimeStream)
-	stream.Actor = *a
+	stream.Actor = a
 	stream.Date = date
 	stream.Speed = 1
 	return stream

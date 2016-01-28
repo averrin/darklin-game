@@ -12,12 +12,12 @@ type Room struct {
 	NPCs map[string]actor.NPCInterface
 }
 
-func NewRoom(name string, gs actor.StreamInterface) *Room {
+func NewRoom(name string, gs actor.StreamInterface) Room {
 	a := area.NewArea(name, gs)
 	room := new(Room)
-	room.Area = *a
+	room.Area = a
 	room.NPCs = make(map[string]actor.NPCInterface)
-	return room
+	return *room
 }
 
 // func (a *Room) String() string {

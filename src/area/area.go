@@ -22,10 +22,10 @@ type Area struct {
 }
 
 //area.NewArea constructor
-func NewArea(name string, gs actor.StreamInterface) *Area {
+func NewArea(name string, gs actor.StreamInterface) Area {
 	a := actor.NewActor(name, gs)
 	area := new(Area)
-	area.Actor = *a
+	area.Actor = a
 	area.Players = make(map[*actor.PlayerInterface]*websocket.Conn)
 	formatter := core.NewFormatter()
 	area.Formatter = formatter
@@ -42,7 +42,7 @@ func NewArea(name string, gs actor.StreamInterface) *Area {
 		db.C("rooms").Find(bson.M{"name": area.Name}).One(&area.State)
 		area.State.New = false
 	}
-	return area
+	return *area
 }
 
 //ProcessEvent from user or cmd

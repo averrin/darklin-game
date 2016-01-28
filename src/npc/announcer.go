@@ -17,7 +17,7 @@ func (a *Announcer) ConsumeEvent(event *events.Event) {
 func NewAnnouncer(gs actor.StreamInterface) *Announcer {
 	a := actor.NewActor("Announcer", gs)
 	announcer := new(Announcer)
-	announcer.Actor = *a
+	announcer.Actor = a
 	announcer.Actor.ProcessEvent = announcer.ProcessEvent
 	return announcer
 }

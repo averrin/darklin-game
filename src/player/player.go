@@ -34,7 +34,7 @@ func NewPlayer(name string, gs actor.StreamInterface) actor.PlayerInterface {
 	// log.Println("New player: ", green(name))
 	a := actor.NewActor(name, gs)
 	p := new(Player)
-	p.Actor = *a
+	p.Actor = a
 	p.Loggedin = false
 	p.Actor.ProcessEvent = p.ProcessEvent
 	p.Actor.ProcessCommand = p.ProcessCommand

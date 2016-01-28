@@ -1,6 +1,9 @@
 package npc
 
-import "time"
+import (
+	"log"
+	"time"
+)
 import "events"
 import "actor"
 
@@ -12,7 +15,7 @@ func NewMik(gs actor.StreamInterface) *NPC {
 	mik.Handlers[events.ROOMCHANGED] = mik.MikRoomChanged
 	mik.Handlers[events.ROOMENTER] = mik.MikRoomEnter
 	mik.Handlers[MIK_SMOKE] = mik.MikSmoke
-	mik.Handlers[MIK_CHANGEROOM] = mik.MikChangeRoom
+	// mik.Handlers[MIK_CHANGEROOM] = mik.MikChangeRoom
 	mik.Handlers[events.LIGHT] = mik.MikLight
 
 	che := events.NewEvent(MIK_CHANGEROOM, nil, mik.Name)
@@ -42,6 +45,7 @@ func (a *NPC) MikRoomChanged(event *events.Event) bool {
 
 func (a *NPC) MikRoomEnter(event *events.Event) bool {
 	room := *a.Room
+	log.Println(room)
 	room.SendEventWithSender(event.Sender, events.MESSAGE, "Привет.", a.Name)
 	return false
 }

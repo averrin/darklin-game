@@ -68,7 +68,7 @@ type Actor struct {
 // }
 
 // NewActor construct new Actor
-func NewActor(name string, gs StreamInterface) *Actor {
+func NewActor(name string, gs StreamInterface) Actor {
 	actor := new(Actor)
 	actor.World = gs.GetWorld()
 	actor.Streams = make(map[string]*chan *events.Event)
@@ -81,7 +81,7 @@ func NewActor(name string, gs StreamInterface) *Actor {
 	actor.CommandHandlers = make(map[string]func(string) bool)
 	actor.ProcessEvent = actor.ProcessEventAbstract
 	actor.ProcessCommand = actor.ProcessCommandAbstract
-	return actor
+	return *actor
 }
 
 // SendEvent with type and payload

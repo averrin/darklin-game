@@ -58,7 +58,7 @@ func (a *NPC) ChangeRoom(room *actor.RoomInterface) {
 func NewNPC(name string, gs actor.StreamInterface, roomName string) *NPC {
 	a := actor.NewActor(name, gs)
 	char := new(NPC)
-	char.Actor = *a
+	char.Actor = a
 	// formatter := NewFormatter()
 	// actor.Formatter = formatter
 	char.Actor.ProcessEvent = char.ProcessEvent
