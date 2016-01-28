@@ -1,7 +1,7 @@
 package main
 
 import (
-	core "core"
+	"core"
 	"flag"
 	"fmt"
 	"globalStream"
