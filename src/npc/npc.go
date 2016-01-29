@@ -4,7 +4,6 @@ import (
 	"actor"
 	"events"
 	"fmt"
-	"log"
 
 	"gopkg.in/mgo.v2/bson"
 )
@@ -70,7 +69,6 @@ func NewNPC(name string, gs actor.StreamInterface) NPC {
 	if n != 0 {
 		db.C("npc").Find(bson.M{"name": char.Name}).One(&char.State)
 		room, _ := a.World.GetRoom(char.State.Room)
-		log.Println(char.State.Room, *room)
 		(*room).AddNPC(char)
 		char.State.New = false
 	}
@@ -82,7 +80,7 @@ func (a *NPC) ProcessEvent(event *events.Event) {
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	// yellow := formatter.Yellow
-	log.Println(a.Name, event)
+	// log.Println(a.Name, event)
 	handler, ok := a.Handlers[event.Type]
 	switch event.Type {
 	case events.COMMAND:

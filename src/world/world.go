@@ -37,10 +37,13 @@ func (w *World) Init() {
 	go hall.Live()
 	store := rooms.NewStore(gs)
 	go store.Live()
+	shop := rooms.NewShop(gs)
+	go shop.Live()
 	announcer := npc.NewAnnouncer(gs)
 	go announcer.Live()
 	store.Init(store)
 	hall.Init(hall)
+	shop.Init(hall)
 
 	// gs.Subscribe(SECOND, announcer)
 	gs.Subscribe(events.MINUTE, &announcer.Actor)

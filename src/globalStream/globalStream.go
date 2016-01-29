@@ -143,24 +143,6 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 		}
 	case "exit":
 		os.Exit(0)
-	case "goto":
-		go func() {
-			if len(tokens) == 2 {
-				p := *a.GetPlayer(event.Sender)
-				w := a.World
-				room, ok := w.GetRoom(tokens[1])
-				if ok {
-					pr, _ := p.GetRoom()
-					if pr == room {
-						a.SendEvent(event.Sender, events.ERROR, fmt.Sprintf("You are already here: %v", tokens[1]))
-					} else {
-						p.ChangeRoom(room)
-					}
-				} else {
-					a.SendEvent(event.Sender, events.ERROR, fmt.Sprintf("No such room: %v", tokens[1]))
-				}
-			}
-		}()
 	case "login":
 		//TODO: do it faster
 		// go func() {

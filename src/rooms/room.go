@@ -13,13 +13,14 @@ import (
 //Room - room.
 type Room struct {
 	area.Area
-	Desc string
-	NPCs map[string]*actor.NPCInterface
-	Init func(*Room)
+	Desc    string
+	NPCs    map[string]*actor.NPCInterface
+	Init    func(*Room)
+	ToRooms []string
 }
 
 //NewRoom - constrictor
-func NewRoom(name string, desc string, init func(*Room), gs actor.StreamInterface) Room {
+func NewRoom(name string, desc string, init func(*Room), rooms []string, gs actor.StreamInterface) Room {
 	a := area.NewArea(name, gs)
 	room := new(Room)
 	room.Area = a
@@ -27,6 +28,7 @@ func NewRoom(name string, desc string, init func(*Room), gs actor.StreamInterfac
 	room.NPCs = make(map[string]*actor.NPCInterface)
 	room.Desc = desc
 	room.Init = init
+	room.ToRooms = rooms
 	return *room
 }
 
@@ -58,9 +60,7 @@ func (a *Room) AddPlayer(p actor.PlayerInterface) {
 //RemovePlayer -
 func (a *Room) RemovePlayer(p actor.PlayerInterface) {
 	delete(a.Streams, p.GetName())
-	log.Println(len(a.Players))
 	delete(a.Players, p)
-	log.Println(len(a.Players))
 }
 
 // BroadcastRoom - send all
@@ -123,6 +123,15 @@ func (a *Room) ProcessEvent(event *events.Event) {
 	}
 }
 
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
 //ProcessCommand from user or cmd
 func (a *Room) ProcessCommand(event *events.Event) {
 	// formatter := a.Formatter
@@ -138,6 +147,19 @@ func (a *Room) ProcessCommand(event *events.Event) {
 		return
 	}
 	switch command {
+	case "goto":
+		go func() {
+			if len(tokens) == 2 {
+				p := *a.GetPlayer(event.Sender)
+				w := a.World
+				room, ok := w.GetRoom(tokens[1])
+				if ok && stringInSlice(tokens[1], a.ToRooms) {
+					p.ChangeRoom(room)
+				} else {
+					a.SendEvent(event.Sender, events.ERROR, fmt.Sprintf("Вы не можете перейти в эту комнату: %v", tokens[1]))
+				}
+			}
+		}()
 	case "describe":
 		if len(tokens) == 2 && tokens[1] == "room" {
 			a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
