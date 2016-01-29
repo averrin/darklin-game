@@ -13,16 +13,18 @@ import (
 type Room struct {
 	area.Area
 	Desc string
-	NPCs map[string]actor.NPCInterface
+	NPCs map[string]*actor.NPCInterface
+	Init func(*Room)
 }
 
-func NewRoom(name string, desc string, gs actor.StreamInterface) Room {
+func NewRoom(name string, desc string, init func(*Room), gs actor.StreamInterface) Room {
 	a := area.NewArea(name, gs)
 	room := new(Room)
 	room.Area = a
 	room.Actor.ProcessEvent = room.ProcessEvent
-	room.NPCs = make(map[string]actor.NPCInterface)
+	room.NPCs = make(map[string]*actor.NPCInterface)
 	room.Desc = desc
+	room.Init = init
 	return *room
 }
 
@@ -32,20 +34,25 @@ func (a *Room) String() string {
 
 func (a *Room) AddNPC(npc actor.NPCInterface) {
 	a.Streams[npc.GetName()] = npc.GetStream()
-	a.NPCs[npc.GetName()] = npc
+	a.NPCs[npc.GetName()] = &npc
+	npc.SetRoom(a)
+	npc.SetStream("room", &a.Stream)
 }
 
 func (a *Room) RemoveNPC(name string) {
-	panic("not implemented")
+	delete(a.Streams, name)
+	delete(a.NPCs, name)
 }
 
 func (a *Room) AddPlayer(p actor.PlayerInterface) {
-	a.Players[&p] = p.GetConnection()
+	a.Players[p] = p.GetConnection()
 	a.Streams[p.GetName()] = p.GetStream()
 }
 func (a *Room) RemovePlayer(p actor.PlayerInterface) {
 	delete(a.Streams, p.GetName())
-	delete(a.Players, &p)
+	log.Println(len(a.Players))
+	delete(a.Players, p)
+	log.Println(len(a.Players))
 }
 
 // BroadcastRoom - send all
@@ -53,18 +60,17 @@ func (a *Room) BroadcastRoom(eventType events.EventType, payload interface{}, se
 	event := events.NewEvent(eventType, payload, sender)
 	defer func() { recover() }()
 	for v := range a.Players {
-		p := *v
-		if p.GetName() == sender {
+		if v.GetName() == sender {
 			continue
 		}
-		stream := *p.GetStream()
+		stream := *v.GetStream()
 		stream <- event
 	}
 	for name, npc := range a.NPCs {
 		if name == sender {
 			continue
 		}
-		stream := *npc.GetStream()
+		stream := *(*npc).GetStream()
 		stream <- event
 	}
 }

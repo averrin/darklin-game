@@ -7,7 +7,7 @@ import (
 )
 
 func NewHall(gs actor.StreamInterface) *Room {
-	hall := NewRoom("Hall", "Это холл. Большая, светлая комната.", gs)
+	hall := NewRoom("Hall", "Это холл. Большая, светлая комната.", (*Room).HallInit, gs)
 	world := hall.World
 
 	hall.Handlers[events.LIGHT] = hall.HallLight
@@ -18,10 +18,14 @@ func NewHall(gs actor.StreamInterface) *Room {
 	return &hall
 }
 
-func (a *Room) Init() {
+func (a *Room) HallInit() {
 	world := a.World
 	gs := *world.GetGlobal()
 	mik := npc.NewMik(gs)
+	// log.Println(mik.State.New)
+	if mik.State.New {
+		a.AddNPC(mik)
+	}
 	go mik.Live()
 }
 

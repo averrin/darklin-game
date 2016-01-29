@@ -12,7 +12,7 @@ import (
 //Area - room for players
 type Area struct {
 	actor.Actor
-	Players   map[*actor.PlayerInterface]*websocket.Conn
+	Players   map[actor.PlayerInterface]*websocket.Conn
 	Formatter core.Formatter
 	State     actor.AreaState
 }
@@ -22,7 +22,7 @@ func NewArea(name string, gs actor.StreamInterface) Area {
 	a := actor.NewActor(name, gs)
 	area := new(Area)
 	area.Actor = a
-	area.Players = make(map[*actor.PlayerInterface]*websocket.Conn)
+	area.Players = make(map[actor.PlayerInterface]*websocket.Conn)
 	formatter := core.NewFormatter()
 	area.Formatter = formatter
 	// area.Actor.ProcessEvent = area.ProcessEvent
@@ -53,9 +53,8 @@ func (a *Area) UpdateState() {
 //GetPlayer by name
 func (a *Area) GetPlayer(name string) *actor.PlayerInterface {
 	for v := range a.Players {
-		p := *v
-		if p.GetName() == name {
-			return &p
+		if v.GetName() == name {
+			return &v
 		}
 	}
 	return new(actor.PlayerInterface)

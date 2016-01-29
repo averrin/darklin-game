@@ -41,7 +41,7 @@ type TimeInterface interface {
 
 type RoomInterface interface {
 	Live()
-	Init()
+	// Init()
 	BroadcastRoom(events.EventType, interface{}, string)
 	GetStream() *chan *events.Event
 	GetState() AreaState
@@ -73,4 +73,6 @@ type NPCInterface interface {
 	GetName() string
 	ChangeRoom(*RoomInterface)
 	GetStream() *chan *events.Event
+	SetStream(string, *chan *events.Event)
+	SetRoom(RoomInterface)
 }

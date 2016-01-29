@@ -7,25 +7,26 @@ import "actor"
 
 //NewMik - nobody likes darkness
 func NewMik(gs actor.StreamInterface) *NPC {
-	mik := NewNPC("Mik Rori", gs, "Hall")
+	mik := NewNPC("Mik Rori", gs)
 	// mik.ProcessEvent = mik.Mik
 
 	mik.Handlers[events.ROOMCHANGED] = mik.MikRoomChanged
 	mik.Handlers[events.ROOMENTER] = mik.MikRoomEnter
 	mik.Handlers[MIK_SMOKE] = mik.MikSmoke
-	// mik.Handlers[MIK_CHANGEROOM] = mik.MikChangeRoom
+	mik.Handlers[MIK_CHANGEROOM] = mik.MikChangeRoom
 	mik.Handlers[events.LIGHT] = mik.MikLight
 
 	che := events.NewEvent(MIK_CHANGEROOM, nil, mik.Name)
 	che.ID = "Mik_change_room"
-	che.Every = 2 * time.Minute
+	che.Every = 1 * time.Minute
+	// che.Every = 15 * time.Second
 	cme := events.NewEvent(MIK_SMOKE, nil, mik.Name)
 	cme.Every = 10 * time.Minute
 	go func() {
 		mik.Stream <- che
 		mik.Stream <- cme
 	}()
-	return mik
+	return &mik
 }
 
 const (
@@ -56,8 +57,9 @@ func (a *NPC) MikSmoke(event *events.Event) bool {
 
 func (a *NPC) MikChangeRoom(event *events.Event) bool {
 	world := a.World
+	// log.Println(world, a.State.New)
 	if a.State.Room == "Hall" {
-		room, _ := world.GetRoom("second")
+		room, _ := world.GetRoom("Store")
 		a.ChangeRoom(room)
 	} else {
 		room, _ := world.GetRoom("Hall")

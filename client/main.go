@@ -72,7 +72,7 @@ func main() {
 		readline.PcItem("help"),
 		readline.PcItem("goto",
 			readline.PcItem("Hall"),
-			readline.PcItem("second"),
+			readline.PcItem("Store"),
 		),
 		readline.PcItem("light",
 			readline.PcItem("on"),

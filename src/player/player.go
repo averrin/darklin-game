@@ -74,12 +74,12 @@ func (a *Player) Login(login string, password string) (string, bool) {
 	}
 	a.Name = login
 	a.Loggedin = true
+	go a.Message(events.NewEvent(events.LOGGEDIN, "Вы вошли как: "+a.Name, "global"))
 	go a.Live()
 	room, _ := a.World.GetRoom(a.State.Room)
 	a.ChangeRoom(room)
 	db.C("players").Upsert(bson.M{"name": a.Name}, a.State)
 	// log.Println("success login", blue(tokens[1]))
-	go a.Message(events.NewEvent(events.LOGGEDIN, "Вы вошли как: "+a.Name, "global"))
 	return "", a.State.New
 }
 
@@ -112,7 +112,7 @@ func (a *Player) ChangeRoom(room *actor.RoomInterface) {
 		(*prevRoom).RemovePlayer(a)
 	}
 	a.Streams["room"] = (*room).GetStream()
-	log.Println(room, &room)
+	// log.Println(room, &room)
 	a.Room = room
 	a.State.Room = (*room).GetName()
 	go a.UpdateState()

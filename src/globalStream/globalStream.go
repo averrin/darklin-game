@@ -117,6 +117,10 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 	case "info":
 		log.Println(fmt.Sprintf("Players: %v", a.Players))
 		log.Println(fmt.Sprintf("Streams: %v", a.Streams))
+		h, _ := a.World.GetRoom("Hall")
+		log.Println(fmt.Sprintf("Hall: %v", *h))
+		s, _ := a.World.GetRoom("Store")
+		log.Println(fmt.Sprintf("Store: %v", *s))
 	case "reset":
 		if event.Sender == "cmd" {
 			go a.SendEvent("time", events.RESET, a.Streams[event.Sender])
@@ -195,7 +199,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 		p.SetConnection(c)
 		p.Message(events.NewEvent(events.CONNECTED, nil, "global"))
 		p.Message(events.NewEvent(events.SYSTEMMESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
-		a.Players[&p] = c
+		a.Players[p] = c
 		if err != nil {
 			log.Print("upgrade:", err)
 			return
@@ -211,7 +215,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 					stream := *p.GetStream()
 					stream <- events.NewEvent(events.CLOSE, nil, a.Name)
 				}()
-				delete(a.Players, &p)
+				delete(a.Players, p)
 				delete(a.Streams, p.GetName())
 				return
 			}

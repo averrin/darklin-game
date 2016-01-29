@@ -4,6 +4,7 @@ import (
 	"actor"
 	"events"
 	"fmt"
+	"log"
 
 	"gopkg.in/mgo.v2/bson"
 )
@@ -40,10 +41,6 @@ func (a *NPC) ChangeRoom(room *actor.RoomInterface) {
 	prevRoom.BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
 	prevRoom.RemoveNPC(a.Name)
 	// delete(a.Room.NPCs, a.Name)
-	a.Streams["room"] = (*room).GetStream()
-	a.Room = room
-	a.State.Room = (*room).GetName()
-	go a.UpdateState()
 	// room.AddNPC(a.(*actor.NPCInterface))
 	// n := actor.NPCInterface(a)
 	(*room).AddNPC(a)
@@ -55,10 +52,11 @@ func (a *NPC) ChangeRoom(room *actor.RoomInterface) {
 }
 
 // NewNPC constructor
-func NewNPC(name string, gs actor.StreamInterface, roomName string) *NPC {
+func NewNPC(name string, gs actor.StreamInterface) NPC {
 	a := actor.NewActor(name, gs)
 	char := new(NPC)
 	char.Actor = a
+	char.World = gs.GetWorld()
 	// formatter := NewFormatter()
 	// actor.Formatter = formatter
 	char.Actor.ProcessEvent = char.ProcessEvent
@@ -69,22 +67,14 @@ func NewNPC(name string, gs actor.StreamInterface, roomName string) *NPC {
 	char.State = *new(actor.CharState)
 	char.State.New = true
 	char.State.Name = char.Name
-	world := a.World
-	room, _ := world.GetRoom(roomName)
-	// room := *rooml
-	char.State.Room = (*room).GetName()
-	char.Room = room
 	if n != 0 {
 		db.C("npc").Find(bson.M{"name": char.Name}).One(&char.State)
+		room, _ := a.World.GetRoom(char.State.Room)
+		log.Println(char.State.Room, *room)
+		(*room).AddNPC(char)
 		char.State.New = false
-		char.Room, _ = world.GetRoom(char.State.Room)
-		// char.Room = &r
 	}
-	char.Streams["room"] = (*room).GetStream()
-	// npci := actor.NPCInterface(char)
-	(*room).AddNPC(char)
-	// char.Room.Streams[char.Name] = &char.Stream
-	return char
+	return *char
 }
 
 //ProcessEvent from user or cmd
@@ -92,6 +82,7 @@ func (a *NPC) ProcessEvent(event *events.Event) {
 	// formatter := a.Formatter
 	// blue := formatter.Blue
 	// yellow := formatter.Yellow
+	log.Println(a.Name, event)
 	handler, ok := a.Handlers[event.Type]
 	switch event.Type {
 	case events.COMMAND:
@@ -107,4 +98,10 @@ func (a *NPC) ProcessEvent(event *events.Event) {
 			_ = handler(event)
 		}
 	}
+}
+
+func (a *NPC) SetRoom(room actor.RoomInterface) {
+	a.Room = &room
+	a.State.Room = room.GetName()
+	go a.UpdateState()
 }

@@ -3,7 +3,6 @@ package world
 import (
 	"actor"
 	"events"
-	"log"
 	"npc"
 	"rooms"
 	"time"
@@ -21,7 +20,7 @@ func NewWorld(gs actor.StreamInterface) *World {
 	// gs := *gsl
 	gs.SetWorld(world)
 	world.Global = &gs
-	log.Println((*world.Global).GetWorld())
+	// log.Println((*world.Global).GetWorld())
 	world.Rooms = make(map[string]actor.RoomInterface)
 	world.Time = timeStream.NewTimeStream(gs, gs.GetDate())
 	go world.Time.Live()
@@ -31,18 +30,14 @@ func NewWorld(gs actor.StreamInterface) *World {
 
 func (w *World) Init() {
 	gs := *w.Global
-	// room2 := rooms.NewRoom("second", gs)
-	// room2.Desc = "Абстрактная комната, не имеющая индивидуальности."
-	// go room2.Live()
-	// ri := actor.RoomInterface(room2)
-	// w.Rooms["second"] = room2
 	hall := rooms.NewHall(gs)
-	// room, _ := w.GetRoom(hall.Name)
-	// log.Println((*room).GetDesc())
 	go hall.Live()
-	hall.Init()
+	store := rooms.NewStore(gs)
+	go store.Live()
 	announcer := npc.NewAnnouncer(gs)
 	go announcer.Live()
+	store.Init(store)
+	hall.Init(hall)
 
 	// gs.Subscribe(SECOND, announcer)
 	gs.Subscribe(events.MINUTE, &announcer.Actor)
@@ -65,6 +60,7 @@ func (w *World) GetTime() *actor.TimeInterface {
 }
 
 func (w *World) GetRoom(name string) (*actor.RoomInterface, bool) {
+	// log.Println(w.Rooms)
 	room, ok := w.Rooms[name]
 	return &room, ok
 }
