@@ -235,6 +235,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 	}
 }
 
+//GetDate -
 func (a *GlobalStream) GetDate() time.Time {
 	return a.State.Date
 }

@@ -100,6 +100,7 @@ func (a *NPC) ProcessEvent(event *events.Event) {
 	}
 }
 
+//SetRoom -
 func (a *NPC) SetRoom(room actor.RoomInterface) {
 	a.Room = &room
 	a.State.Room = room.GetName()

@@ -9,12 +9,14 @@ import (
 	"timeStream"
 )
 
+//World - global container
 type World struct {
 	Rooms  map[string]actor.RoomInterface
 	Global *actor.StreamInterface
 	Time   actor.TimeInterface
 }
 
+//NewWorld - constructor
 func NewWorld(gs actor.StreamInterface) *World {
 	world := new(World)
 	// gs := *gsl
@@ -28,6 +30,7 @@ func NewWorld(gs actor.StreamInterface) *World {
 	return world
 }
 
+//Init - create rooms
 func (w *World) Init() {
 	gs := *w.Global
 	hall := rooms.NewHall(gs)
@@ -43,22 +46,27 @@ func (w *World) Init() {
 	gs.Subscribe(events.MINUTE, &announcer.Actor)
 }
 
+//AddRoom -
 func (w *World) AddRoom(name string, room actor.RoomInterface) {
 	w.Rooms[name] = room
 }
 
+//GetDate -
 func (w *World) GetDate() time.Time {
 	return w.Time.GetDate()
 }
 
+//GetGlobal -
 func (w *World) GetGlobal() *actor.StreamInterface {
 	return w.Global
 }
 
+//GetTime -
 func (w *World) GetTime() *actor.TimeInterface {
 	return &w.Time
 }
 
+//GetRoom -
 func (w *World) GetRoom(name string) (*actor.RoomInterface, bool) {
 	// log.Println(w.Rooms)
 	room, ok := w.Rooms[name]

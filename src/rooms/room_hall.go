@@ -6,6 +6,7 @@ import (
 	"npc"
 )
 
+//NewHall - constructor
 func NewHall(gs actor.StreamInterface) *Room {
 	hall := NewRoom("Hall", "Это холл. Большая, светлая комната.", (*Room).HallInit, gs)
 	world := hall.World
@@ -18,6 +19,7 @@ func NewHall(gs actor.StreamInterface) *Room {
 	return &hall
 }
 
+//HallInit -
 func (a *Room) HallInit() {
 	world := a.World
 	gs := *world.GetGlobal()
@@ -29,6 +31,7 @@ func (a *Room) HallInit() {
 	go mik.Live()
 }
 
+//HallLight -
 func (a *Room) HallLight(event *events.Event) bool {
 	if !event.Payload.(bool) {
 		a.BroadcastRoom(events.SYSTEMMESSAGE, "Стало как-то неуютно", a.Name)

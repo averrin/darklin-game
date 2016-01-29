@@ -10,6 +10,7 @@ import (
 	"events"
 )
 
+//Room - room.
 type Room struct {
 	area.Area
 	Desc string
@@ -17,6 +18,7 @@ type Room struct {
 	Init func(*Room)
 }
 
+//NewRoom - constrictor
 func NewRoom(name string, desc string, init func(*Room), gs actor.StreamInterface) Room {
 	a := area.NewArea(name, gs)
 	room := new(Room)
@@ -28,10 +30,12 @@ func NewRoom(name string, desc string, init func(*Room), gs actor.StreamInterfac
 	return *room
 }
 
+//String -
 func (a *Room) String() string {
 	return fmt.Sprintf("{Name: %s, Players: %d, NPCs: %d, Desc: '%s'}", a.Name, len(a.Players), len(a.NPCs), a.Desc)
 }
 
+//AddNPC -
 func (a *Room) AddNPC(npc actor.NPCInterface) {
 	a.Streams[npc.GetName()] = npc.GetStream()
 	a.NPCs[npc.GetName()] = &npc
@@ -39,15 +43,19 @@ func (a *Room) AddNPC(npc actor.NPCInterface) {
 	npc.SetStream("room", &a.Stream)
 }
 
+//RemoveNPC -
 func (a *Room) RemoveNPC(name string) {
 	delete(a.Streams, name)
 	delete(a.NPCs, name)
 }
 
+//AddPlayer -
 func (a *Room) AddPlayer(p actor.PlayerInterface) {
 	a.Players[p] = p.GetConnection()
 	a.Streams[p.GetName()] = p.GetStream()
 }
+
+//RemovePlayer -
 func (a *Room) RemovePlayer(p actor.PlayerInterface) {
 	delete(a.Streams, p.GetName())
 	log.Println(len(a.Players))
@@ -75,6 +83,7 @@ func (a *Room) BroadcastRoom(eventType events.EventType, payload interface{}, se
 	}
 }
 
+//GetState -
 func (a *Room) GetState() actor.AreaState {
 	return a.State
 }
@@ -164,6 +173,7 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	}
 }
 
+//GetDesc -
 func (a *Room) GetDesc() string {
 	return a.Desc
 }

@@ -13,6 +13,7 @@ type EventPublisher interface {
 	SendEvent(events.EventType, interface{})
 }
 
+//StreamInterface -
 type StreamInterface interface {
 	Live()
 	SetWorld(WorldInterface)
@@ -24,6 +25,7 @@ type StreamInterface interface {
 	GetPlayerHandler() func(http.ResponseWriter, *http.Request)
 }
 
+//WorldInterface -
 type WorldInterface interface {
 	GetRoom(string) (*RoomInterface, bool)
 	GetGlobal() *StreamInterface
@@ -32,6 +34,7 @@ type WorldInterface interface {
 	AddRoom(string, RoomInterface)
 }
 
+//TimeInterface -
 type TimeInterface interface {
 	Live()
 	Sleep(time.Duration)
@@ -39,6 +42,7 @@ type TimeInterface interface {
 	GetStream() *chan *events.Event
 }
 
+//RoomInterface -
 type RoomInterface interface {
 	Live()
 	// Init()
@@ -55,6 +59,7 @@ type RoomInterface interface {
 	GetPendingEvent(string) (*events.Event, bool)
 }
 
+//PlayerInterface -
 type PlayerInterface interface {
 	Live()
 	GetName() string
@@ -68,6 +73,7 @@ type PlayerInterface interface {
 	GetConnection() *websocket.Conn
 }
 
+//NPCInterface -
 type NPCInterface interface {
 	Live()
 	GetName() string

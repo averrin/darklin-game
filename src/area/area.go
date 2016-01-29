@@ -17,7 +17,7 @@ type Area struct {
 	State     actor.AreaState
 }
 
-//area.NewArea constructor
+//NewArea constructor
 func NewArea(name string, gs actor.StreamInterface) Area {
 	a := actor.NewActor(name, gs)
 	area := new(Area)

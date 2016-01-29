@@ -191,32 +191,41 @@ func (a *Actor) ProcessEventAbstract(event *events.Event) {
 	log.Println("Abstract", a.Name, event)
 }
 
+//ProcessCommandAbstract -
 func (a *Actor) ProcessCommandAbstract(event *events.Event) {}
+
+//Sleep -
 func (a *Actor) Sleep(duration time.Duration) {
 	(*a.World.GetTime()).Sleep(duration)
 }
 
+//GetName -
 func (a *Actor) GetName() string {
 	return a.Name
 }
 
+//GetStream -
 func (a *Actor) GetStream() *chan *events.Event {
 	return &a.Stream
 }
 
+//GetPendingEvent -
 func (a *Actor) GetPendingEvent(name string) (*events.Event, bool) {
 	ev, ok := a.PendingEvents[name]
 	return ev, ok
 }
 
+//SetWorld -
 func (a *Actor) SetWorld(w WorldInterface) {
 	a.World = w
 }
 
+//SetStream -
 func (a *Actor) SetStream(name string, s *chan *events.Event) {
 	a.Streams[name] = s
 }
 
+//GetWorld -
 func (a *Actor) GetWorld() WorldInterface {
 	return a.World
 }

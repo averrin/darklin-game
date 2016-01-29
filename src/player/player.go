@@ -19,7 +19,7 @@ type Player struct {
 	actor.Actor
 	Room       *actor.RoomInterface
 	Connection *websocket.Conn
-	State      PlayerState
+	State      State
 	Loggedin   bool
 }
 
@@ -54,7 +54,7 @@ func HashPassword(password string) string {
 func (a *Player) Login(login string, password string) (string, bool) {
 	// delete(a.Streams, p.Name)
 	password = HashPassword(password)
-	a.State = *new(PlayerState)
+	a.State = *new(State)
 	s := a.Storage.Session.Copy()
 	defer s.Close()
 	db := s.DB("darklin")
@@ -145,24 +145,28 @@ func (a *Player) ProcessEvent(event *events.Event) {
 
 //ProcessCommand - command handler
 func (a *Player) ProcessCommand(event *events.Event) {}
+
+//GetConnection -
 func (a *Player) GetConnection() *websocket.Conn {
 	return a.Connection
 }
+
+//SetConnection -
 func (a *Player) SetConnection(c *websocket.Conn) {
 	a.Connection = c
 }
 
+//GetRoom -
 func (a *Player) GetRoom() (*actor.RoomInterface, bool) {
 	if a.Room != nil {
 		room := a.Room
 		return room, true
-	} else {
-		return nil, false
 	}
+	return nil, false
 }
 
-//PlayerState - db saved state
-type PlayerState struct {
+//State - db saved state
+type State struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`
 	Name string
 

@@ -29,11 +29,13 @@ func NewMik(gs actor.StreamInterface) *NPC {
 	return &mik
 }
 
+//Events
 const (
 	MIK_CHANGEROOM events.EventType = iota
 	MIK_SMOKE
 )
 
+//MikRoomChanged -
 func (a *NPC) MikRoomChanged(event *events.Event) bool {
 	room := *a.Room
 	if !room.GetState().Light {
@@ -42,6 +44,7 @@ func (a *NPC) MikRoomChanged(event *events.Event) bool {
 	return false
 }
 
+//MikRoomEnter -
 func (a *NPC) MikRoomEnter(event *events.Event) bool {
 	room := *a.Room
 	// log.Println(room)
@@ -49,12 +52,14 @@ func (a *NPC) MikRoomEnter(event *events.Event) bool {
 	return false
 }
 
+//MikSmoke -
 func (a *NPC) MikSmoke(event *events.Event) bool {
 	room := *a.Room
 	room.BroadcastRoom(events.SYSTEMMESSAGE, "*Мик закуривает трубку*", a.Name)
 	return false
 }
 
+//MikChangeRoom -
 func (a *NPC) MikChangeRoom(event *events.Event) bool {
 	world := a.World
 	// log.Println(world, a.State.New)
@@ -68,6 +73,7 @@ func (a *NPC) MikChangeRoom(event *events.Event) bool {
 	return false
 }
 
+//MikLight -
 func (a *NPC) MikLight(event *events.Event) bool {
 	room := *a.Room
 	if !event.Payload.(bool) {
