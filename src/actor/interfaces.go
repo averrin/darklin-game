@@ -82,3 +82,9 @@ type NPCInterface interface {
 	SetStream(string, *chan *events.Event)
 	SetRoom(RoomInterface)
 }
+
+//ItemInterface -
+type ItemInterface interface {
+	GetName() string
+	GetDesc() string
+}

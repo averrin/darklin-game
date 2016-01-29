@@ -17,6 +17,7 @@ type Room struct {
 	NPCs    map[string]*actor.NPCInterface
 	Init    func(*Room)
 	ToRooms []string
+	Items   map[string]actor.ItemInterface
 }
 
 //NewRoom - constrictor
@@ -26,6 +27,7 @@ func NewRoom(name string, desc string, init func(*Room), rooms []string, gs acto
 	room.Area = a
 	room.Actor.ProcessEvent = room.ProcessEvent
 	room.NPCs = make(map[string]*actor.NPCInterface)
+	room.Items = make(map[string]actor.ItemInterface)
 	room.Desc = desc
 	room.Init = init
 	room.ToRooms = rooms
@@ -160,6 +162,8 @@ func (a *Room) ProcessCommand(event *events.Event) {
 				}
 			}
 		}()
+	case "search":
+		a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: %v", a.Items))
 	case "describe":
 		if len(tokens) == 2 && tokens[1] == "room" {
 			a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)

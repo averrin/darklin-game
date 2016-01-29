@@ -14,6 +14,7 @@ type World struct {
 	Rooms  map[string]actor.RoomInterface
 	Global *actor.StreamInterface
 	Time   actor.TimeInterface
+	Items  map[string]actor.ItemInterface
 }
 
 //NewWorld - constructor
@@ -24,6 +25,7 @@ func NewWorld(gs actor.StreamInterface) *World {
 	world.Global = &gs
 	// log.Println((*world.Global).GetWorld())
 	world.Rooms = make(map[string]actor.RoomInterface)
+	world.Items = make(map[string]actor.ItemInterface)
 	world.Time = timeStream.NewTimeStream(gs, gs.GetDate())
 	go world.Time.Live()
 
@@ -43,7 +45,7 @@ func (w *World) Init() {
 	go announcer.Live()
 	store.Init(store)
 	hall.Init(hall)
-	shop.Init(hall)
+	shop.Init(shop)
 
 	// gs.Subscribe(SECOND, announcer)
 	gs.Subscribe(events.MINUTE, &announcer.Actor)

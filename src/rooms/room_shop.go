@@ -1,9 +1,18 @@
 package rooms
 
-import "actor"
+import (
+	"actor"
+	"log"
+)
+import "items"
 
 //ShopInit - room init
 func (a *Room) ShopInit() {
+	key := new(items.Item)
+	key.Name = "Key"
+	key.Desc = "Огромный старый ключ."
+	a.Items["Key"] = key
+	log.Println(a.Items)
 }
 
 //NewShop - constructor
