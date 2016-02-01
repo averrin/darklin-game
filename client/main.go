@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"commands"
 	"events"
 	"flag"
 	"fmt"
@@ -20,6 +21,8 @@ import (
 
 	"gopkg.in/readline.v1"
 )
+
+var COMMANDS map[string][]string
 
 func runInit(c *websocket.Conn) {
 	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -61,36 +64,38 @@ func connect(u url.URL) *websocket.Conn {
 	return c
 }
 
+func BuildCompleter(completer *readline.PrefixCompleter) {
+	COMMANDS = commands.GetCommands()
+	for cmd, children := range COMMANDS {
+		item := readline.PcItem(cmd)
+		for _, child := range children {
+			item.Children = append(item.Children, readline.PcItem(child))
+		}
+		completer.Children = append(completer.Children, item)
+	}
+}
+
+func ReBuildCompleter(completer *readline.PrefixCompleter, key string, items []interface{}) {
+	completer.Children = []*readline.PrefixCompleter{}
+	for cmd, children := range COMMANDS {
+		item := readline.PcItem(cmd)
+		if cmd == key {
+			for _, child := range items {
+				item.Children = append(item.Children, readline.PcItem(string(child.([]byte))))
+			}
+		} else {
+			for _, child := range children {
+				item.Children = append(item.Children, readline.PcItem(child))
+			}
+		}
+		completer.Children = append(completer.Children, item)
+	}
+}
+
 func main() {
 
-	var completer = readline.NewPrefixCompleter(
-		readline.PcItem("/"),
-		readline.PcItem("time"),
-		readline.PcItem("exit"),
-		readline.PcItem("online"),
-		readline.PcItem("login"),
-		readline.PcItem("help"),
-		readline.PcItem("search"),
-		readline.PcItem("me"),
-		readline.PcItem("goto",
-			readline.PcItem("Hall"),
-			readline.PcItem("Store"),
-			readline.PcItem("Shop"),
-		),
-		readline.PcItem("light",
-			readline.PcItem("on"),
-			readline.PcItem("off"),
-		),
-		readline.PcItem("describe",
-			readline.PcItem("room"),
-		),
-		readline.PcItem("pick",
-			readline.PcItem("Key"),
-		),
-		readline.PcItem("drop",
-			readline.PcItem("Key"),
-		),
-	)
+	var completer = readline.NewPrefixCompleter()
+	BuildCompleter(completer)
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:       ">> ",
 		HistoryFile:  "/tmp/readline.tmp",
@@ -149,6 +154,13 @@ func main() {
 			switch event.Type {
 			case events.HEARTBEAT:
 			case events.LIGHT:
+			case events.INTERNALINFO:
+				// ii := event.Payload.(actor.InternalInfo)
+				ii := event.Payload.(map[interface{}]interface{})
+				log.Println(fmt.Sprintf("%s", ii))
+				if string(ii["Type"].([]byte)) == "autocomplete" {
+					ReBuildCompleter(completer, string(ii["Key"].([]byte)), ii["Args"].([]interface{}))
+				}
 			case events.ROOMENTER:
 				sep := yellow("| ")
 				print(sep+"%s %s", event.Sender, event.Payload)

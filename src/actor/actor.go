@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	exp_events_processed = expvar.NewInt("events_processed")
+	expEventsProcessed = expvar.NewInt("events_processed")
 )
 
 // "fmt"
@@ -152,7 +152,7 @@ func (a *Actor) Live() {
 	a.Storage.DB = s.DB("darklin")
 	for {
 		event := <-a.Stream
-		exp_events_processed.Add(1)
+		expEventsProcessed.Add(1)
 		if event.Abort {
 			continue
 		}
@@ -239,4 +239,22 @@ func Index(slice []string, value string) int {
 		}
 	}
 	return -1
+}
+
+func (a *Actor) SendCompleterList(reciever string, key string, items []string) {
+	a.SendEvent(reciever, events.INTERNALINFO, NewCompleterItems(key, items))
+}
+
+type InternalInfo struct {
+	Type string
+	Key  string
+	Args interface{}
+}
+
+func NewCompleterItems(key string, items []string) InternalInfo {
+	ii := new(InternalInfo)
+	ii.Type = "autocomplete"
+	ii.Key = key
+	ii.Args = items
+	return *ii
 }

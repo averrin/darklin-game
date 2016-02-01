@@ -35,6 +35,7 @@ const (
 	CONNECTED
 	DESCRIBE
 	STATUS
+	INTERNALINFO
 )
 
 // Event is atom of event stream

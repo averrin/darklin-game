@@ -107,6 +107,7 @@ func (a *Room) ProcessEvent(event *events.Event) {
 	case events.DESCRIBE:
 		a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
 	case events.ROOMENTER:
+		a.SendCompleterList(event.Sender, "goto", a.ToRooms)
 		if ok {
 			handled := handler(event)
 			if handled {
@@ -151,11 +152,18 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	// log.Println(command)
 	_, ok := a.Streams[event.Sender]
 	log.Println(fmt.Sprintf("%v: Recv command %s", a.Name, event))
+	log.Println(ok, command, event)
 	if ok == false && command != "login" && event.Sender != "cmd" {
 		log.Println("Discard command " + command + " from " + event.Sender)
 		return
 	}
 	switch command {
+	case "_routes":
+		a.SendCompleterList(event.Sender, "goto", a.ToRooms)
+	case "_items":
+		// a.SendCompleterListItems(event.Sender, a.Items)
+	case "routes":
+		a.SendEvent(event.Sender, events.SYSTEMMESSAGE, a.ToRooms)
 	case "goto":
 		go func() {
 			if len(tokens) == 2 {

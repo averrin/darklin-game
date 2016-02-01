@@ -108,7 +108,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 	// log.Println(tokens, len(tokens))
 	command := strings.ToLower(tokens[0])
 	_, ok := a.Streams[event.Sender]
-	// log.Println("Recv command " + command + " from " + event.Sender)
+	// log.Println(ok, command, event)
 	if ok == false && command != "login" && event.Sender != "cmd" {
 		log.Println("Discard command " + command + " from " + event.Sender)
 		return
@@ -197,6 +197,8 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 					stream := *p.GetStream()
 					stream <- events.NewEvent(events.CLOSE, nil, a.Name)
 				}()
+				room, _ := p.GetRoom()
+				(*room).RemovePlayer(p)
 				delete(a.Players, p)
 				delete(a.Streams, p.GetName())
 				return
