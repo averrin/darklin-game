@@ -175,6 +175,7 @@ func (a *Player) GetRoom() (*actor.RoomInterface, bool) {
 	return nil, false
 }
 
+//AddItem -
 func (a *Player) AddItem(item actor.ItemInterface) {
 	pos := actor.Index(a.State.Items, item.GetName())
 	a.Items.AddItem(item.GetName(), item)
@@ -184,6 +185,7 @@ func (a *Player) AddItem(item actor.ItemInterface) {
 	}
 }
 
+//RemoveItem -
 func (a *Player) RemoveItem(name string) {
 	a.Items.RemoveItem(name)
 	pos := actor.Index(a.State.Items, name)
@@ -191,6 +193,7 @@ func (a *Player) RemoveItem(name string) {
 	a.UpdateState()
 }
 
+//GetItem -
 func (a *Player) GetItem(name string) (actor.ItemInterface, bool) {
 	return a.Items.GetItem(name)
 }

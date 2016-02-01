@@ -87,14 +87,17 @@ func (w *World) GetRoom(name string) (*actor.RoomInterface, bool) {
 	return &room, ok
 }
 
+//AddItem -
 func (w *World) AddItem(item actor.ItemInterface) {
 	w.Items.AddItem(item.GetName(), item)
 }
 
+//RemoveItem -
 func (w *World) RemoveItem(name string) {
 	w.Items.RemoveItem(name)
 }
 
+//GetItem -
 func (w *World) GetItem(name string) (actor.ItemInterface, bool) {
 	return w.Items.GetItem(name)
 }

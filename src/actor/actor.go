@@ -231,6 +231,7 @@ func (a *Actor) GetWorld() WorldInterface {
 	return a.World
 }
 
+//Index -
 func Index(slice []string, value string) int {
 	for p, v := range slice {
 		if v == value {
