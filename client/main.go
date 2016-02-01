@@ -158,6 +158,9 @@ func main() {
 			case events.ROOMCHANGED:
 				sep := green("| ")
 				print(sep+"%s", event.Payload)
+			case events.STATUS:
+				sep := blue("| ")
+				print(sep+"%s", event.Payload)
 			case events.DESCRIBE:
 				sep := blue("| ")
 				print(sep+"%s", event.Payload)

@@ -145,7 +145,7 @@ func (a *Player) ProcessEvent(event *events.Event) {
 			// a.Streams[p.Name] = &p.Stream
 		}
 	case events.STATUS:
-		a.Message(events.NewEvent(events.STATUS, fmt.Sprintf("Пердметы:\n%v", a.Items), a.Name))
+		a.Message(events.NewEvent(events.STATUS, fmt.Sprintf("Предметы:\n%v", a.Items), a.Name))
 	default:
 		if a.Connection != nil {
 			a.Message(event)
