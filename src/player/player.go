@@ -69,6 +69,10 @@ func (a *Player) Login(login string, password string) (string, bool) {
 			return "Неверный пароль", false
 		}
 		a.State.New = false
+		for _, name := range a.State.Items {
+			item, _ := a.World.GetItem(name)
+			a.AddItem(item)
+		}
 	} else {
 		a.State.New = true
 		a.State.Name = login
@@ -172,11 +176,19 @@ func (a *Player) GetRoom() (*actor.RoomInterface, bool) {
 }
 
 func (a *Player) AddItem(item actor.ItemInterface) {
+	pos := actor.Index(a.State.Items, item.GetName())
 	a.Items.AddItem(item.GetName(), item)
+	if pos == -1 {
+		a.State.Items = append(a.State.Items, item.GetName())
+		a.UpdateState()
+	}
 }
 
 func (a *Player) RemoveItem(name string) {
 	a.Items.RemoveItem(name)
+	pos := actor.Index(a.State.Items, name)
+	a.State.Items = append(a.State.Items[:pos], a.State.Items[pos+1:]...)
+	a.UpdateState()
 }
 
 func (a *Player) GetItem(name string) (actor.ItemInterface, bool) {
@@ -188,8 +200,9 @@ type State struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`
 	Name string
 
-	Room string
-	HP   int
+	Room  string
+	Items []string
+	HP    int
 
 	New      bool
 	Password string

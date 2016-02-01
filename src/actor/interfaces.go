@@ -32,6 +32,9 @@ type WorldInterface interface {
 	GetTime() *TimeInterface
 	GetDate() time.Time
 	AddRoom(string, RoomInterface)
+	AddItem(ItemInterface)
+	RemoveItem(string)
+	GetItem(string) (ItemInterface, bool)
 }
 
 //TimeInterface -

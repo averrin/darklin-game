@@ -14,7 +14,7 @@ type Area struct {
 	actor.Actor
 	Players   map[actor.PlayerInterface]*websocket.Conn
 	Formatter core.Formatter
-	State     actor.AreaState
+	State     *actor.AreaState
 }
 
 //NewArea constructor
@@ -30,7 +30,7 @@ func NewArea(name string, gs actor.StreamInterface) Area {
 	defer s.Close()
 	db := s.DB("darklin")
 	n, _ := db.C("rooms").Find(bson.M{"name": area.Name}).Count()
-	area.State = *new(actor.AreaState)
+	area.State = new(actor.AreaState)
 	area.State.New = true
 	area.State.Light = true
 	area.State.Name = area.Name

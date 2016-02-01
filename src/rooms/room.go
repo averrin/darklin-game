@@ -34,6 +34,10 @@ func NewRoom(name string, desc string, init func(*Room), rooms []string, gs acto
 	room.Desc = desc
 	room.Init = init
 	room.ToRooms = rooms
+	for _, name := range a.State.Items {
+		item, _ := room.World.GetItem(name)
+		room.AddItem(item)
+	}
 	return *room
 }
 
@@ -90,7 +94,7 @@ func (a *Room) BroadcastRoom(eventType events.EventType, payload interface{}, se
 
 //GetState -
 func (a *Room) GetState() actor.AreaState {
-	return a.State
+	return *a.State
 }
 
 //ProcessEvent from user or cmd
@@ -178,7 +182,7 @@ func (a *Room) ProcessCommand(event *events.Event) {
 			p := *a.GetPlayer(event.Sender)
 			item, ok := a.Items.GetItem(tokens[1])
 			if ok {
-				a.Items.RemoveItem(tokens[1])
+				a.RemoveItem(tokens[1])
 				p.AddItem(item)
 				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
 			}
@@ -188,7 +192,7 @@ func (a *Room) ProcessCommand(event *events.Event) {
 			p := *a.GetPlayer(event.Sender)
 			item, ok := p.GetItem(tokens[1])
 			if ok {
-				a.Items.AddItem(tokens[1], item)
+				a.AddItem(item)
 				p.RemoveItem(tokens[1])
 				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы бросили: %v [%v]", item.GetDesc(), item.GetName()))
 			}
@@ -231,4 +235,24 @@ func (a *Room) ProcessCommand(event *events.Event) {
 //GetDesc -
 func (a *Room) GetDesc() string {
 	return a.Desc
+}
+
+func (a *Room) AddItem(item actor.ItemInterface) {
+	pos := actor.Index(a.State.Items, item.GetName())
+	a.Items.AddItem(item.GetName(), item)
+	if pos == -1 {
+		a.State.Items = append(a.State.Items, item.GetName())
+		a.UpdateState()
+	}
+}
+
+func (a *Room) RemoveItem(name string) {
+	a.Items.RemoveItem(name)
+	pos := actor.Index(a.State.Items, name)
+	a.State.Items = append(a.State.Items[:pos], a.State.Items[pos+1:]...)
+	a.UpdateState()
+}
+
+func (a *Room) GetItem(name string) (actor.ItemInterface, bool) {
+	return a.Items.GetItem(name)
 }

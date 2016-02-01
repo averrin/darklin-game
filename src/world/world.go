@@ -3,6 +3,7 @@ package world
 import (
 	"actor"
 	"events"
+	"items"
 	"npc"
 	"rooms"
 	"time"
@@ -14,7 +15,7 @@ type World struct {
 	Rooms  map[string]actor.RoomInterface
 	Global *actor.StreamInterface
 	Time   actor.TimeInterface
-	Items  map[string]actor.ItemInterface
+	Items  actor.ItemContainerInterface
 }
 
 //NewWorld - constructor
@@ -25,7 +26,9 @@ func NewWorld(gs actor.StreamInterface) *World {
 	world.Global = &gs
 	// log.Println((*world.Global).GetWorld())
 	world.Rooms = make(map[string]actor.RoomInterface)
-	world.Items = make(map[string]actor.ItemInterface)
+	// world.Items = make(map[string]actor.ItemInterface)
+	container := items.NewContainer()
+	world.Items = container
 	world.Time = timeStream.NewTimeStream(gs, gs.GetDate())
 	go world.Time.Live()
 
@@ -34,6 +37,12 @@ func NewWorld(gs actor.StreamInterface) *World {
 
 //Init - create rooms
 func (w *World) Init() {
+
+	key := new(items.Item)
+	key.Name = "Key"
+	key.Desc = "Огромный старый ключ."
+	w.Items.AddItem("Key", key)
+
 	gs := *w.Global
 	hall := rooms.NewHall(gs)
 	go hall.Live()
@@ -76,4 +85,16 @@ func (w *World) GetRoom(name string) (*actor.RoomInterface, bool) {
 	// log.Println(w.Rooms)
 	room, ok := w.Rooms[name]
 	return &room, ok
+}
+
+func (w *World) AddItem(item actor.ItemInterface) {
+	w.Items.AddItem(item.GetName(), item)
+}
+
+func (w *World) RemoveItem(name string) {
+	w.Items.RemoveItem(name)
+}
+
+func (w *World) GetItem(name string) (actor.ItemInterface, bool) {
+	return w.Items.GetItem(name)
 }

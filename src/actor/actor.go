@@ -39,6 +39,7 @@ type AreaState struct {
 	Name string
 
 	Light bool
+	Items []string
 
 	New bool
 }
@@ -228,4 +229,13 @@ func (a *Actor) SetStream(name string, s *chan *events.Event) {
 //GetWorld -
 func (a *Actor) GetWorld() WorldInterface {
 	return a.World
+}
+
+func Index(slice []string, value string) int {
+	for p, v := range slice {
+		if v == value {
+			return p
+		}
+	}
+	return -1
 }
