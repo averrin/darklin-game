@@ -11,7 +11,7 @@ func (a *Room) ShopInit() {
 	key := new(items.Item)
 	key.Name = "Key"
 	key.Desc = "Огромный старый ключ."
-	a.Items["Key"] = key
+	a.Items.AddItem("Key", key)
 	log.Println(a.Items)
 }
 

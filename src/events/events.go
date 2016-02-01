@@ -34,6 +34,7 @@ const (
 	LIGHT
 	CONNECTED
 	DESCRIBE
+	STATUS
 )
 
 // Event is atom of event stream

@@ -71,6 +71,9 @@ type PlayerInterface interface {
 	ProcessEvent(*events.Event)
 	SetConnection(*websocket.Conn)
 	GetConnection() *websocket.Conn
+	AddItem(ItemInterface)
+	RemoveItem(string)
+	GetItem(string) (ItemInterface, bool)
 }
 
 //NPCInterface -
@@ -81,10 +84,20 @@ type NPCInterface interface {
 	GetStream() *chan *events.Event
 	SetStream(string, *chan *events.Event)
 	SetRoom(RoomInterface)
+	// AddItem(ItemInterface)
 }
 
 //ItemInterface -
 type ItemInterface interface {
 	GetName() string
 	GetDesc() string
+}
+
+//ItemContainerInterface -
+type ItemContainerInterface interface {
+	GetItems() map[string]ItemInterface
+	GetItem(string) (ItemInterface, bool)
+	AddItem(string, ItemInterface)
+	RemoveItem(string)
+	Count() int
 }

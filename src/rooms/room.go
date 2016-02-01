@@ -1,13 +1,13 @@
 package rooms
 
 import (
+	"actor"
 	"area"
+	"events"
 	"fmt"
+	"items"
 	"log"
 	"strings"
-	// "fmt"
-	"actor"
-	"events"
 )
 
 //Room - room.
@@ -17,7 +17,8 @@ type Room struct {
 	NPCs    map[string]*actor.NPCInterface
 	Init    func(*Room)
 	ToRooms []string
-	Items   map[string]actor.ItemInterface
+	// Items   map[string]actor.ItemInterface
+	Items actor.ItemContainerInterface
 }
 
 //NewRoom - constrictor
@@ -27,7 +28,9 @@ func NewRoom(name string, desc string, init func(*Room), rooms []string, gs acto
 	room.Area = a
 	room.Actor.ProcessEvent = room.ProcessEvent
 	room.NPCs = make(map[string]*actor.NPCInterface)
-	room.Items = make(map[string]actor.ItemInterface)
+	// room.Items = make(map[string]actor.ItemInterface)
+	container := items.NewContainer()
+	room.Items = container
 	room.Desc = desc
 	room.Init = init
 	room.ToRooms = rooms
@@ -163,7 +166,33 @@ func (a *Room) ProcessCommand(event *events.Event) {
 			}
 		}()
 	case "search":
-		a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: %v", a.Items))
+		if a.State.Light {
+			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
+		} else {
+			go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате темно")
+		}
+	case "me":
+		a.SendEvent(event.Sender, events.STATUS, nil)
+	case "pick":
+		if len(tokens) == 2 {
+			p := *a.GetPlayer(event.Sender)
+			item, ok := a.Items.GetItem(tokens[1])
+			if ok {
+				a.Items.RemoveItem(tokens[1])
+				p.AddItem(item)
+				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
+			}
+		}
+	case "drop":
+		if len(tokens) == 2 {
+			p := *a.GetPlayer(event.Sender)
+			item, ok := p.GetItem(tokens[1])
+			if ok {
+				a.Items.AddItem(tokens[1], item)
+				p.RemoveItem(tokens[1])
+				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы бросили: %v [%v]", item.GetDesc(), item.GetName()))
+			}
+		}
 	case "describe":
 		if len(tokens) == 2 && tokens[1] == "room" {
 			a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)

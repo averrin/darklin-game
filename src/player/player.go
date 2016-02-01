@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"events"
 	"fmt"
+	"items"
 	"log"
 
 	"gopkg.in/mgo.v2/bson"
@@ -21,6 +22,7 @@ type Player struct {
 	Connection *websocket.Conn
 	State      State
 	Loggedin   bool
+	Items      actor.ItemContainerInterface
 }
 
 // ConsumeEvent of cause
@@ -38,6 +40,8 @@ func NewPlayer(name string, gs actor.StreamInterface) actor.PlayerInterface {
 	p.Loggedin = false
 	p.Actor.ProcessEvent = p.ProcessEvent
 	p.Actor.ProcessCommand = p.ProcessCommand
+	container := items.NewContainer()
+	p.Items = container
 	return p
 }
 
@@ -136,6 +140,8 @@ func (a *Player) ProcessEvent(event *events.Event) {
 			a.SendEvent("global", events.LOGGEDIN, nil)
 			// a.Streams[p.Name] = &p.Stream
 		}
+	case events.STATUS:
+		a.Message(events.NewEvent(events.STATUS, fmt.Sprintf("Пердметы:\n%v", a.Items), a.Name))
 	default:
 		if a.Connection != nil {
 			a.Message(event)
@@ -163,6 +169,18 @@ func (a *Player) GetRoom() (*actor.RoomInterface, bool) {
 		return room, true
 	}
 	return nil, false
+}
+
+func (a *Player) AddItem(item actor.ItemInterface) {
+	a.Items.AddItem(item.GetName(), item)
+}
+
+func (a *Player) RemoveItem(name string) {
+	a.Items.RemoveItem(name)
+}
+
+func (a *Player) GetItem(name string) (actor.ItemInterface, bool) {
+	return a.Items.GetItem(name)
 }
 
 //State - db saved state
