@@ -214,6 +214,10 @@ func (a *Player) SetSelected(object actor.SelectableInterface) {
 	}
 }
 
+func (a *Player) GetSelected() actor.SelectableInterface {
+	return a.Selected
+}
+
 //State - db saved state
 type State struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`

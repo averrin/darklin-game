@@ -79,6 +79,7 @@ type PlayerInterface interface {
 	GetItem(string) (ItemInterface, bool)
 	GetItems() map[string]ItemInterface
 	SetSelected(SelectableInterface)
+	GetSelected() SelectableInterface
 }
 
 //NPCInterface -

@@ -186,11 +186,16 @@ func (a *Room) ProcessCommand(event *events.Event) {
 				}
 			}
 		}()
-	case "search":
+	case "lookup":
 		if a.State.Light {
-			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
-			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Объекты: \n%v", a.Objects))
-			go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
+			p := *a.GetPlayer(event.Sender)
+			if p.GetSelected() == nil {
+				a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
+				a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Объекты: \n%v", a.Objects))
+				go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
+			} else {
+				a.SendEvent(event.Sender, events.DESCRIBE, "А что у тебя там выбрано?")
+			}
 		} else {
 			go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате темно")
 		}
@@ -221,8 +226,11 @@ func (a *Room) ProcessCommand(event *events.Event) {
 			}
 		}
 	case "describe":
-		if len(tokens) == 2 && tokens[1] == "room" {
+		p := *a.GetPlayer(event.Sender)
+		if p.GetSelected() == nil {
 			a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
+		} else {
+			a.SendEvent(event.Sender, events.DESCRIBE, p.GetSelected().GetDesc())
 		}
 	case "light":
 		if len(tokens) == 2 && (tokens[1] == "on" || tokens[1] == "off") {

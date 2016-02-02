@@ -8,16 +8,14 @@ func GetCommands() map[string][]string {
 		"online":   []string{},
 		"login":    []string{},
 		"help":     []string{},
-		"search":   []string{},
+		"lookup":   []string{},
 		"me":       []string{},
 		"goto":     []string{},
 		"pick":     []string{},
 		"drop":     []string{},
 		"select":   []string{},
 		"unselect": []string{},
-		"describe": []string{
-			"room",
-		},
+		"describe": []string{},
 		"light": []string{
 			"on", "off",
 		},
