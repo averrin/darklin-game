@@ -23,6 +23,7 @@ type Player struct {
 	State      State
 	Loggedin   bool
 	Items      actor.ItemContainerInterface
+	Selected   actor.SelectableInterface
 }
 
 // ConsumeEvent of cause
@@ -201,6 +202,16 @@ func (a *Player) GetItem(name string) (actor.ItemInterface, bool) {
 //GetItems -
 func (a *Player) GetItems() map[string]actor.ItemInterface {
 	return a.Items.GetItems()
+}
+
+//GetItems -
+func (a *Player) SetSelected(object actor.SelectableInterface) {
+	a.Selected = object
+	if object != nil {
+		a.Message(events.NewEvent(events.SELECTED, object.GetName(), a.Name))
+	} else {
+		a.Message(events.NewEvent(events.UNSELECTED, nil, a.Name))
+	}
 }
 
 //State - db saved state

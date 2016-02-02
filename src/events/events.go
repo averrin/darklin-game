@@ -36,6 +36,8 @@ const (
 	DESCRIBE
 	STATUS
 	INTERNALINFO
+	SELECTED
+	UNSELECTED
 )
 
 // Event is atom of event stream

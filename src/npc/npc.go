@@ -11,6 +11,7 @@ import (
 //Character - room-based actor
 type Character struct {
 	actor.Actor
+	Desc  string
 	Room  *actor.RoomInterface
 	World actor.WorldInterface
 }
@@ -103,4 +104,9 @@ func (a *NPC) SetRoom(room actor.RoomInterface) {
 	a.Room = &room
 	a.State.Room = room.GetName()
 	go a.UpdateState()
+}
+
+//GetDesc -
+func (a *NPC) GetDesc() string {
+	return a.Desc
 }

@@ -155,6 +155,12 @@ func main() {
 			switch event.Type {
 			case events.HEARTBEAT:
 			case events.LIGHT:
+			case events.UNSELECTED:
+				rl.SetPrompt(">> ")
+				rl.Refresh()
+			case events.SELECTED:
+				rl.SetPrompt(fmt.Sprintf("> %s > ", green(string(event.Payload.([]byte)))))
+				rl.Refresh()
 			case events.INTERNALINFO:
 				// ii := event.Payload.(actor.InternalInfo)
 				ii := event.Payload.(map[interface{}]interface{})

@@ -164,6 +164,15 @@ func (a *Room) ProcessCommand(event *events.Event) {
 		a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 	case "routes":
 		a.SendEvent(event.Sender, events.SYSTEMMESSAGE, a.ToRooms)
+	case "unselect":
+		p := *a.GetPlayer(event.Sender)
+		p.SetSelected(nil)
+	case "select":
+		object, ok := a.Objects[tokens[1]]
+		p := *a.GetPlayer(event.Sender)
+		if ok {
+			p.SetSelected(object)
+		}
 	case "goto":
 		go func() {
 			if len(tokens) == 2 {

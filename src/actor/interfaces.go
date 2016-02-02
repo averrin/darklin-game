@@ -78,17 +78,18 @@ type PlayerInterface interface {
 	RemoveItem(string)
 	GetItem(string) (ItemInterface, bool)
 	GetItems() map[string]ItemInterface
+	SetSelected(SelectableInterface)
 }
 
 //NPCInterface -
 type NPCInterface interface {
 	Live()
-	GetName() string
 	ChangeRoom(*RoomInterface)
 	GetStream() *chan *events.Event
 	SetStream(string, *chan *events.Event)
 	SetRoom(RoomInterface)
 	// AddItem(ItemInterface)
+	SelectableInterface
 }
 
 //ItemInterface -
@@ -108,10 +109,17 @@ type ItemContainerInterface interface {
 
 //ObjectInterface -
 type ObjectInterface interface {
-	GetName() string
-	GetDesc() string
 	GetItems() map[string]ItemInterface
 	GetItem(string) (ItemInterface, bool)
 	AddItem(ItemInterface)
 	RemoveItem(string)
+	SelectableInterface
+}
+
+//SelectableInterface -
+type SelectableInterface interface {
+	GetName() string
+	GetDesc() string
+	// Select()
+	// Unselect()
 }
