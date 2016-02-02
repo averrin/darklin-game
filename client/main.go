@@ -22,6 +22,7 @@ import (
 	"gopkg.in/readline.v1"
 )
 
+//COMMANDS - init commands set
 var COMMANDS map[string][]string
 
 func runInit(c *websocket.Conn) {
@@ -157,7 +158,7 @@ func main() {
 			case events.INTERNALINFO:
 				// ii := event.Payload.(actor.InternalInfo)
 				ii := event.Payload.(map[interface{}]interface{})
-				log.Println(fmt.Sprintf("%s", ii))
+				// log.Println(fmt.Sprintf("%s", ii))
 				if string(ii["Type"].([]byte)) == "autocomplete" {
 					ReBuildCompleter(completer, string(ii["Key"].([]byte)), ii["Args"].([]interface{}))
 				}

@@ -13,17 +13,11 @@ func GetCommands() map[string][]string {
 		"describe": []string{
 			"room",
 		},
-		"goto": []string{
-			"Hall", "Store", "Shop",
-		},
+		"goto": []string{},
 		"light": []string{
 			"on", "off",
 		},
-		"pick": []string{
-			"Key",
-		},
-		"drop": []string{
-			"Key",
-		},
+		"pick": []string{},
+		"drop": []string{},
 	}
 }

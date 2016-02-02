@@ -245,6 +245,14 @@ func (a *Actor) SendCompleterList(reciever string, key string, items []string) {
 	a.SendEvent(reciever, events.INTERNALINFO, NewCompleterItems(key, items))
 }
 
+func (a *Actor) SendCompleterListItems(reciever string, key string, items map[string]ItemInterface) {
+	names := make([]string, 0)
+	for i := range items {
+		names = append(names, i)
+	}
+	a.SendEvent(reciever, events.INTERNALINFO, NewCompleterItems(key, names))
+}
+
 type InternalInfo struct {
 	Type string
 	Key  string

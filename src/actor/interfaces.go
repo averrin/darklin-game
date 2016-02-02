@@ -77,6 +77,7 @@ type PlayerInterface interface {
 	AddItem(ItemInterface)
 	RemoveItem(string)
 	GetItem(string) (ItemInterface, bool)
+	GetItems() map[string]ItemInterface
 }
 
 //NPCInterface -

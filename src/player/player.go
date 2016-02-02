@@ -198,6 +198,11 @@ func (a *Player) GetItem(name string) (actor.ItemInterface, bool) {
 	return a.Items.GetItem(name)
 }
 
+//GetItems -
+func (a *Player) GetItems() map[string]actor.ItemInterface {
+	return a.Items.GetItems()
+}
+
 //State - db saved state
 type State struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`

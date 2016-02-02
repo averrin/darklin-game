@@ -161,7 +161,7 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	case "_routes":
 		a.SendCompleterList(event.Sender, "goto", a.ToRooms)
 	case "_items":
-		// a.SendCompleterListItems(event.Sender, a.Items)
+		a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 	case "routes":
 		a.SendEvent(event.Sender, events.SYSTEMMESSAGE, a.ToRooms)
 	case "goto":
@@ -180,6 +180,7 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	case "search":
 		if a.State.Light {
 			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
+			go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 		} else {
 			go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате темно")
 		}
@@ -193,6 +194,8 @@ func (a *Room) ProcessCommand(event *events.Event) {
 				a.RemoveItem(tokens[1])
 				p.AddItem(item)
 				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
+				go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
+				go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 			}
 		}
 	case "drop":
@@ -203,6 +206,8 @@ func (a *Room) ProcessCommand(event *events.Event) {
 				a.AddItem(item)
 				p.RemoveItem(tokens[1])
 				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы бросили: %v [%v]", item.GetDesc(), item.GetName()))
+				go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
+				go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 			}
 		}
 	case "describe":
