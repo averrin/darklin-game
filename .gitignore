@@ -1,0 +1,7 @@
+bin
+pkg
+src/*.*
+.tags*
+core
+client/src
+client/darklin-client

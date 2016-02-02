@@ -105,3 +105,13 @@ type ItemContainerInterface interface {
 	RemoveItem(string)
 	Count() int
 }
+
+//ObjectInterface -
+type ObjectInterface interface {
+	GetName() string
+	GetDesc() string
+	GetItems() map[string]ItemInterface
+	GetItem(string) (ItemInterface, bool)
+	AddItem(ItemInterface)
+	RemoveItem(string)
+}

@@ -17,8 +17,8 @@ type Room struct {
 	NPCs    map[string]*actor.NPCInterface
 	Init    func(*Room)
 	ToRooms []string
-	// Items   map[string]actor.ItemInterface
-	Items actor.ItemContainerInterface
+	Items   actor.ItemContainerInterface
+	Objects map[string]actor.ObjectInterface
 }
 
 //NewRoom - constrictor
@@ -28,7 +28,7 @@ func NewRoom(name string, desc string, init func(*Room), rooms []string, gs acto
 	room.Area = a
 	room.Actor.ProcessEvent = room.ProcessEvent
 	room.NPCs = make(map[string]*actor.NPCInterface)
-	// room.Items = make(map[string]actor.ItemInterface)
+	room.Objects = make(map[string]actor.ObjectInterface)
 	container := items.NewContainer()
 	room.Items = container
 	room.Desc = desc
@@ -180,6 +180,7 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	case "search":
 		if a.State.Light {
 			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
+			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Объекты: \n%v", a.Objects))
 			go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 		} else {
 			go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате темно")

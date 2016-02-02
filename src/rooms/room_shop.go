@@ -1,6 +1,9 @@
 package rooms
 
-import "actor"
+import (
+	"actor"
+	"objects"
+)
 
 //ShopInit - room init
 func (a *Room) ShopInit() {
@@ -8,6 +11,8 @@ func (a *Room) ShopInit() {
 		item, _ := a.World.GetItem("Key")
 		a.AddItem(item)
 	}
+	t := objects.NewTable()
+	a.Objects["Table"] = &t
 }
 
 //NewShop - constructor

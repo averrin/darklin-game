@@ -2,6 +2,7 @@ package items
 
 import "fmt"
 
+//Item -
 type Item struct {
 	Name string
 	Desc string
@@ -17,7 +18,7 @@ func (a *Item) GetDesc() string {
 	return a.Desc
 }
 
-//GetName -
+//String -
 func (a *Item) String() string {
 	return fmt.Sprintf("{Name: %s, Desc: %s}", a.Name, a.Desc)
 }
