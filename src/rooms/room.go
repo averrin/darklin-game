@@ -194,7 +194,12 @@ func (a *Room) ProcessCommand(event *events.Event) {
 				a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Объекты: \n%v", a.Objects))
 				go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 			} else {
-				a.SendEvent(event.Sender, events.DESCRIBE, "А что у тебя там выбрано?")
+				obj := p.GetSelected()
+				switch obj.(type) {
+				case actor.ObjectInterface:
+					o := obj.(actor.ObjectInterface)
+					a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", o.GetItems()))
+				}
 			}
 		} else {
 			go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате темно")
@@ -204,13 +209,29 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	case "pick":
 		if len(tokens) == 2 {
 			p := *a.GetPlayer(event.Sender)
-			item, ok := a.Items.GetItem(tokens[1])
-			if ok {
-				a.RemoveItem(tokens[1])
-				p.AddItem(item)
-				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
-				go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
-				go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
+			if p.GetSelected() == nil {
+				item, ok := a.Items.GetItem(tokens[1])
+				if ok {
+					a.RemoveItem(tokens[1])
+					p.AddItem(item)
+					go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
+					go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
+					go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
+				}
+			} else {
+				obj := p.GetSelected()
+				switch obj.(type) {
+				case actor.ObjectInterface:
+					sel := obj.(actor.ObjectInterface)
+					item, ok := sel.GetItem(tokens[1])
+					if ok {
+						sel.RemoveItem(tokens[1])
+						p.AddItem(item)
+						go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
+						go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
+						go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
+					}
+				}
 			}
 		}
 	case "drop":

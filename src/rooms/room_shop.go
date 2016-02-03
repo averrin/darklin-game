@@ -7,12 +7,12 @@ import (
 
 //ShopInit - room init
 func (a *Room) ShopInit() {
-	if a.State.New {
-		item, _ := a.World.GetItem("Key")
-		a.AddItem(item)
-	}
 	t := objects.NewTable()
 	a.Objects["Table"] = &t
+	if a.State.New {
+		item, _ := a.World.GetItem("Key")
+		t.AddItem(item)
+	}
 }
 
 //NewShop - constructor

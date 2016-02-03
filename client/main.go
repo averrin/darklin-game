@@ -135,6 +135,8 @@ func main() {
 			// log.Println(string(message))
 			if err != nil {
 				// log.Println("read:", err)
+				rl.SetPrompt(">> ")
+				rl.Refresh()
 				log.Println(red("Disconnected...") + " wait...")
 				time.Sleep(500 * time.Millisecond)
 				conn = connect(u)
@@ -187,6 +189,8 @@ func main() {
 				sep := green("| ")
 				print(sep+"%s", event.Payload)
 			case events.LOGGEDIN:
+				rl.SetPrompt(">> ")
+				rl.Refresh()
 				sep := green("| ")
 				print(sep+"%s", event.Payload)
 			case events.ERROR:
