@@ -1,0 +1,36 @@
+package events
+
+// EventType is a basic event type
+type EventType int
+
+// EventTypes enum
+const (
+	ALL EventType = iota
+	INFO
+	TICK
+	SECOND
+	MINUTE
+	HOUR
+	DAY
+	MESSAGE
+	COMMAND
+	HEARTBEAT
+	RESET //10
+	CLOSE
+	PAUSE
+	ERROR
+	LOGIN
+	LOGGEDIN
+	LOGINFAIL
+	ROOMEXIT
+	ROOMENTER
+	ROOMCHANGED
+	SYSTEMMESSAGE
+	LIGHT
+	CONNECTED
+	DESCRIBE
+	STATUS
+	INTERNALINFO
+	SELECTED
+	UNSELECTED
+)

@@ -2,42 +2,39 @@ package commands
 
 type Command string
 
-const (
-	Say      Command = "/"
-	Time     Command = "time"
-	Exit     Command = "exit"
-	Online   Command = "online"
-	Login    Command = "login"
-	Help     Command = "help"
-	Lookup   Command = "lookup"
-	Status   Command = "me"
-	Goto     Command = "goto"
-	Pick     Command = "pick"
-	Drop     Command = "drop"
-	Select   Command = "select"
-	Unselect Command = "unselect"
-	Describe Command = "describe"
-	Light    Command = "light"
+var Commands []Command
+
+func NewCommand(s string) Command {
+	c := Command(s)
+	Commands = append(Commands, c)
+	return c
+}
+
+var (
+	Say      = NewCommand("/")
+	Time     = NewCommand("time")
+	Exit     = NewCommand("exit")
+	Online   = NewCommand("online")
+	Login    = NewCommand("login")
+	Help     = NewCommand("help")
+	Lookup   = NewCommand("lookup")
+	Status   = NewCommand("me")
+	Goto     = NewCommand("goto")
+	Pick     = NewCommand("pick")
+	Drop     = NewCommand("drop")
+	Select   = NewCommand("select")
+	Unselect = NewCommand("unselect")
+	Describe = NewCommand("describe")
+	Light    = NewCommand("light")
 )
 
 func GetCommands() map[Command][]string {
-	return map[Command][]string{
-		Say:      []string{},
-		Time:     []string{},
-		Exit:     []string{},
-		Online:   []string{},
-		Login:    []string{},
-		Help:     []string{},
-		Lookup:   []string{},
-		Status:   []string{},
-		Goto:     []string{},
-		Pick:     []string{},
-		Drop:     []string{},
-		Select:   []string{},
-		Unselect: []string{},
-		Describe: []string{},
-		Light: []string{
-			"on", "off",
-		},
+	c := map[Command][]string{}
+	for _, cmd := range Commands {
+		c[cmd] = []string{}
 	}
+	c[Light] = []string{
+		"on", "off",
+	}
+	return c
 }

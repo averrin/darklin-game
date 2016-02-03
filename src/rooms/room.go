@@ -124,7 +124,7 @@ func (a *Room) ProcessEvent(event *events.Event) {
 	case events.DESCRIBE:
 		a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
 	case events.ROOMENTER:
-		a.SendCompleterList(event.Sender, "goto", a.ToRooms)
+		a.SendCompleterList(event.Sender, string(commands.Goto), a.ToRooms)
 		if ok {
 			handled := handler(event)
 			if handled {
@@ -161,20 +161,15 @@ func stringInSlice(a string, list []string) bool {
 
 //ProcessCommand from user or cmd
 func (a *Room) ProcessCommand(event *events.Event) {
-	// formatter := a.Formatter
-	// blue := formatter.Blue
 	tokens := strings.Split(event.Payload.(string), " ")
-	// log.Println(tokens, len(tokens))
 	command := strings.ToLower(tokens[0])
-	// log.Println(command)
 	_, ok := a.Streams[event.Sender]
 	log.Println(fmt.Sprintf("%v: Recv command %s", a.Name, event))
-	// log.Println(ok, command, event)
-	if ok == false && command != "login" && event.Sender != "cmd" {
+	cmd := commands.Command(command)
+	if ok == false && cmd != commands.Login && event.Sender != "cmd" {
 		log.Println("Discard command " + command + " from " + event.Sender)
 		return
 	}
-	cmd := commands.Command(command)
 	handler, ok := Handlers[cmd]
 	if ok {
 		handler(a, event, tokens)
@@ -182,9 +177,9 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	}
 	switch cmd {
 	case "_routes":
-		a.SendCompleterList(event.Sender, "goto", a.ToRooms)
+		a.SendCompleterList(event.Sender, string(commands.Goto), a.ToRooms)
 	case "_items":
-		a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
+		a.SendCompleterListItems(event.Sender, string(commands.Pick), a.Items.GetItems())
 	case "routes":
 		a.SendEvent(event.Sender, events.SYSTEMMESSAGE, a.ToRooms)
 	case commands.Unselect:
@@ -193,10 +188,9 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	case commands.Status:
 		a.SendEvent(event.Sender, events.STATUS, nil)
 	default:
-		if strings.HasPrefix(command, "/") {
+		if strings.HasPrefix(command, string(commands.Say)) {
 			a.Broadcast(events.MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)
 		} else {
-			// log.Println(a.Name, "forward", event)
 			a.ForwardEvent("global", event)
 		}
 	}
