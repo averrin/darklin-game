@@ -23,7 +23,7 @@ import (
 )
 
 //COMMANDS - init commands set
-var COMMANDS map[string][]string
+var COMMANDS map[commands.Command][]string
 
 func runInit(c *websocket.Conn) {
 	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -68,7 +68,7 @@ func connect(u url.URL) *websocket.Conn {
 func BuildCompleter(completer *readline.PrefixCompleter) {
 	COMMANDS = commands.GetCommands()
 	for cmd, children := range COMMANDS {
-		item := readline.PcItem(cmd)
+		item := readline.PcItem(string(cmd))
 		for _, child := range children {
 			item.Children = append(item.Children, readline.PcItem(child))
 		}
@@ -79,8 +79,8 @@ func BuildCompleter(completer *readline.PrefixCompleter) {
 func ReBuildCompleter(completer *readline.PrefixCompleter, key string, items []interface{}) {
 	completer.Children = []*readline.PrefixCompleter{}
 	for cmd, children := range COMMANDS {
-		item := readline.PcItem(cmd)
-		if cmd == key {
+		item := readline.PcItem(string(cmd))
+		if string(cmd) == key {
 			for _, child := range items {
 				item.Children = append(item.Children, readline.PcItem(string(child.([]byte))))
 			}

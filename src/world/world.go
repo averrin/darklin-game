@@ -38,6 +38,7 @@ func NewWorld(gs actor.StreamInterface) *World {
 //Init - create rooms
 func (w *World) Init() {
 
+	rooms.InitHandlers()
 	key := new(items.Item)
 	key.Name = "Key"
 	key.Desc = "Огромный старый ключ."

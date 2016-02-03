@@ -3,6 +3,7 @@ package rooms
 import (
 	"actor"
 	"area"
+	"commands"
 	"events"
 	"fmt"
 	"items"
@@ -19,6 +20,22 @@ type Room struct {
 	ToRooms []string
 	Items   actor.ItemContainerInterface
 	Objects map[string]actor.ObjectInterface
+}
+
+type CommandHandler func(*Room, *events.Event, []string)
+
+var Handlers map[commands.Command]CommandHandler
+
+func InitHandlers() {
+	Handlers = map[commands.Command]CommandHandler{
+		commands.Pick:     PickHandler,
+		commands.Goto:     GotoHandler,
+		commands.Lookup:   LookupHandler,
+		commands.Light:    LightHandler,
+		commands.Describe: DescribeHandler,
+		commands.Drop:     DropHandler,
+		commands.Select:   SelectHandler,
+	}
 }
 
 //NewRoom - constrictor
@@ -152,128 +169,29 @@ func (a *Room) ProcessCommand(event *events.Event) {
 	// log.Println(command)
 	_, ok := a.Streams[event.Sender]
 	log.Println(fmt.Sprintf("%v: Recv command %s", a.Name, event))
-	log.Println(ok, command, event)
+	// log.Println(ok, command, event)
 	if ok == false && command != "login" && event.Sender != "cmd" {
 		log.Println("Discard command " + command + " from " + event.Sender)
 		return
 	}
-	switch command {
+	cmd := commands.Command(command)
+	handler, ok := Handlers[cmd]
+	if ok {
+		handler(a, event, tokens)
+		return
+	}
+	switch cmd {
 	case "_routes":
 		a.SendCompleterList(event.Sender, "goto", a.ToRooms)
 	case "_items":
 		a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 	case "routes":
 		a.SendEvent(event.Sender, events.SYSTEMMESSAGE, a.ToRooms)
-	case "unselect":
+	case commands.Unselect:
 		p := *a.GetPlayer(event.Sender)
 		p.SetSelected(nil)
-	case "select":
-		object, ok := a.Objects[tokens[1]]
-		p := *a.GetPlayer(event.Sender)
-		if ok {
-			p.SetSelected(object)
-		}
-	case "goto":
-		go func() {
-			if len(tokens) == 2 {
-				p := *a.GetPlayer(event.Sender)
-				w := a.World
-				room, ok := w.GetRoom(tokens[1])
-				if ok && stringInSlice(tokens[1], a.ToRooms) {
-					p.ChangeRoom(room)
-				} else {
-					a.SendEvent(event.Sender, events.ERROR, fmt.Sprintf("Вы не можете перейти в эту комнату: %v", tokens[1]))
-				}
-			}
-		}()
-	case "lookup":
-		if a.State.Light {
-			p := *a.GetPlayer(event.Sender)
-			if p.GetSelected() == nil {
-				a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
-				a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Объекты: \n%v", a.Objects))
-				go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
-			} else {
-				obj := p.GetSelected()
-				switch obj.(type) {
-				case actor.ObjectInterface:
-					o := obj.(actor.ObjectInterface)
-					a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", o.GetItems()))
-				}
-			}
-		} else {
-			go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате темно")
-		}
-	case "me":
+	case commands.Status:
 		a.SendEvent(event.Sender, events.STATUS, nil)
-	case "pick":
-		if len(tokens) == 2 {
-			p := *a.GetPlayer(event.Sender)
-			if p.GetSelected() == nil {
-				item, ok := a.Items.GetItem(tokens[1])
-				if ok {
-					a.RemoveItem(tokens[1])
-					p.AddItem(item)
-					go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
-					go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
-					go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
-				}
-			} else {
-				obj := p.GetSelected()
-				switch obj.(type) {
-				case actor.ObjectInterface:
-					sel := obj.(actor.ObjectInterface)
-					item, ok := sel.GetItem(tokens[1])
-					if ok {
-						sel.RemoveItem(tokens[1])
-						p.AddItem(item)
-						go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы подняли: %v [%v]", item.GetDesc(), item.GetName()))
-						go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
-						go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
-					}
-				}
-			}
-		}
-	case "drop":
-		if len(tokens) == 2 {
-			p := *a.GetPlayer(event.Sender)
-			item, ok := p.GetItem(tokens[1])
-			if ok {
-				a.AddItem(item)
-				p.RemoveItem(tokens[1])
-				go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Вы бросили: %v [%v]", item.GetDesc(), item.GetName()))
-				go a.SendCompleterListItems(event.Sender, "drop", p.GetItems())
-				go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
-			}
-		}
-	case "describe":
-		p := *a.GetPlayer(event.Sender)
-		if p.GetSelected() == nil {
-			a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
-		} else {
-			a.SendEvent(event.Sender, events.DESCRIBE, p.GetSelected().GetDesc())
-		}
-	case "light":
-		if len(tokens) == 2 && (tokens[1] == "on" || tokens[1] == "off") {
-			if tokens[1] == "on" {
-				if a.State.Light {
-					go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате уже светло")
-					return
-				}
-				a.State.Light = true
-				go a.Broadcast(events.SYSTEMMESSAGE, "В комнате зажегся свет", a.Name)
-			} else {
-				if !a.State.Light {
-					go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, "В комнате уже темно")
-					return
-				}
-				a.State.Light = false
-				go a.Broadcast(events.SYSTEMMESSAGE, "В комнате погас свет", a.Name)
-			}
-			go func() { a.Stream <- events.NewEvent(events.LIGHT, a.State.Light, event.Sender) }()
-			go a.Broadcast(events.LIGHT, a.State.Light, a.Name)
-			go a.UpdateState()
-		}
 	default:
 		if strings.HasPrefix(command, "/") {
 			a.Broadcast(events.MESSAGE, event.Payload.(string)[1:len(event.Payload.(string))], event.Sender)

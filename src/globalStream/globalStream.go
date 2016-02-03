@@ -3,6 +3,7 @@ package globalStream
 import (
 	"actor"
 	"area"
+	"commands"
 	"events"
 	"fmt"
 	"log"
@@ -113,7 +114,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 		log.Println("Discard command " + command + " from " + event.Sender)
 		return
 	}
-	switch command {
+	switch commands.Command(command) {
 	case "info":
 		log.Println(fmt.Sprintf("Players: %v", a.Players))
 		log.Println(fmt.Sprintf("Streams: %v", a.Streams))
@@ -129,21 +130,21 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 		if event.Sender == "cmd" {
 			go a.SendEvent("time", events.PAUSE, nil)
 		}
-	case "time":
+	case commands.Time:
 		if event.Sender == "cmd" {
 			panic("TODO: fix it")
 			// log.Println(fmt.Sprintf("Date: %v", world.WORLD.Time.Date))
 		} else {
 			go a.SendEvent("time", events.INFO, *a.Streams[event.Sender])
 		}
-	case "online":
+	case commands.Online:
 		log.Println(fmt.Sprintf("Online: %v", len(a.Players)))
 		if event.Sender != "cmd" {
 			go a.SendEvent(event.Sender, events.SYSTEMMESSAGE, fmt.Sprintf("Online: %v", len(a.Players)))
 		}
-	case "exit":
+	case commands.Exit:
 		os.Exit(0)
-	case "login":
+	case commands.Login:
 		//TODO: do it faster
 		// go func() {
 		if len(tokens) == 3 {
@@ -158,7 +159,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 			}
 		}
 		// }()
-	case "help":
+	case commands.Help:
 		p := *a.GetPlayer(event.Sender)
 		go a.SendEvent(p.GetName(), events.SYSTEMMESSAGE, "Help message")
 	default:
