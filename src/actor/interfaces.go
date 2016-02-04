@@ -105,6 +105,7 @@ type ItemContainerInterface interface {
 	AddItem(string, ItemInterface)
 	RemoveItem(string)
 	Count() int
+	String() string
 }
 
 //ObjectInterface -

@@ -9,7 +9,7 @@ import (
 
 //NewHall - constructor
 func NewHall(gs actor.StreamInterface) *Room {
-	hall := NewRoom("Hall", "Это холл. Большая, светлая комната.", (*Room).HallInit, []string{"Store", "Shop"}, gs)
+	hall := NewRoom("Hall", "Это холл. Большая, светлая комната. У стены стоит сундук [Chest].", (*Room).HallInit, []string{"Store", "Shop"}, gs)
 	world := hall.World
 
 	hall.Handlers[events.LIGHT] = hall.HallLight

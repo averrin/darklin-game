@@ -2,7 +2,6 @@ package objects
 
 import (
 	"actor"
-	"fmt"
 	"items"
 )
 
@@ -28,7 +27,12 @@ func (a *Chest) Inspect() string {
 	if a.Locked {
 		return "Сундук заперт."
 	}
-	return fmt.Sprintf("%s", a.Items)
+	r := a.Desc
+	if a.Items.Count() > 0 {
+		r += "\nПредметы:"
+		r += a.Items.String()
+	}
+	return r
 }
 
 //Lock -

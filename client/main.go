@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -109,8 +110,16 @@ func main() {
 	log.SetOutput(rl.Stderr())
 	log.SetPrefix("")
 
+	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+
+	key := regexp.MustCompile(`\[(\w+)\]`)
 	print := func(template string, a ...interface{}) {
-		fmt.Fprintf(rl.Stderr(), template+"\n", a...)
+		str := fmt.Sprintf(template+"\n", a...)
+		str = key.ReplaceAllString(str, "["+green("$1")+"]")
+		fmt.Fprint(rl.Stderr(), str)
 	}
 
 	host := flag.String("host", "core.darkl.in", "host of core")
@@ -120,11 +129,6 @@ func main() {
 	defer conn.Close()
 
 	done := make(chan struct{})
-
-	green := color.New(color.FgGreen).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 
 	go func() {
 		defer conn.Close()

@@ -226,5 +226,10 @@ func (a *Room) GetItem(name string) (actor.ItemInterface, bool) {
 }
 
 func (a *Room) Inspect() string {
-	return fmt.Sprintf("%v\n%v", a.Desc, a.Items)
+	r := a.Desc
+	if a.Items.Count() > 0 {
+		r += "\nПредметы на полу:"
+		r += a.Items.String()
+	}
+	return r
 }

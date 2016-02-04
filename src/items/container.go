@@ -46,7 +46,7 @@ func (a *Container) RemoveItem(name string) {
 
 //String -
 func (a *Container) String() string {
-	tplString := "{{range $key, $item := .Items}}\t{{$key}} -- {{$item.GetDesc}}\n{{end}}"
+	tplString := "\n{{range $key, $item := .Items}}  * {{$item.GetDesc}} [{{$key}}]{{end}}"
 	tpl, err := template.New("container").Parse(tplString)
 	if err != nil {
 		panic(err)
