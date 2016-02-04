@@ -16,7 +16,7 @@ type Chest struct {
 func NewChest() Chest {
 	chest := new(Chest)
 	chest.Name = "Chest"
-	chest.Desc = "Сундук"
+	chest.Desc = "Сундук."
 	container := items.NewContainer()
 	chest.Items = container
 	return *chest
@@ -52,5 +52,5 @@ func (a *Chest) Use(item actor.ItemInterface) interface{} {
 		return "И ничего не произошло."
 	}
 	a.Unlock()
-	return "Сундук открылся"
+	return "Сундук открылся."
 }

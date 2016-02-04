@@ -115,10 +115,12 @@ func main() {
 	yellow := color.New(color.FgYellow).SprintFunc()
 	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 
-	key := regexp.MustCompile(`\[(\w+)\]`)
+	key := regexp.MustCompile(`\[([\w ]+)\]`)
+	npc := regexp.MustCompile(`\{([\w ]+)\}`)
 	print := func(template string, a ...interface{}) {
 		str := fmt.Sprintf(template+"\n", a...)
 		str = key.ReplaceAllString(str, "["+green("$1")+"]")
+		str = npc.ReplaceAllString(str, "{"+yellow("$1")+"}")
 		fmt.Fprint(rl.Stderr(), str)
 	}
 

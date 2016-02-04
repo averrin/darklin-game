@@ -52,9 +52,10 @@ func (a *NPC) ChangeRoom(room *actor.RoomInterface) {
 }
 
 // NewNPC constructor
-func NewNPC(name string, gs actor.StreamInterface) NPC {
+func NewNPC(name string, desc string, gs actor.StreamInterface) NPC {
 	a := actor.NewActor(name, gs)
 	char := new(NPC)
+	char.Desc = desc
 	char.Actor = a
 	char.World = gs.GetWorld()
 	// formatter := NewFormatter()

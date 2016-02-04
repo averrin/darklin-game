@@ -7,7 +7,7 @@ import "actor"
 
 //NewMik - nobody likes darkness
 func NewMik(gs actor.StreamInterface) *NPC {
-	mik := NewNPC("Mik Rori", gs)
+	mik := NewNPC("Mik Rori", "Старик с трубкой.", gs)
 	// mik.ProcessEvent = mik.Mik
 
 	mik.Handlers[events.ROOMCHANGED] = mik.MikRoomChanged

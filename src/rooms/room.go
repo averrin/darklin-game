@@ -231,5 +231,12 @@ func (a *Room) Inspect() string {
 		r += "\nПредметы на полу:"
 		r += a.Items.String()
 	}
+	if len(a.NPCs) > 0 {
+		r += "\nПерсонажи:"
+		for _, npc := range a.NPCs {
+			r += fmt.Sprintf("\n  * %s {%s}", (*npc).GetDesc(), (*npc).GetName())
+		}
+
+	}
 	return r
 }
