@@ -119,6 +119,7 @@ func (a *Player) ChangeRoom(room *actor.RoomInterface) {
 	if prevRoom != nil {
 		(*prevRoom).BroadcastRoom(events.ROOMEXIT, "Покинул комнату", a.Name)
 		(*prevRoom).RemovePlayer(a)
+		a.SetSelected(nil)
 	}
 	a.Streams["room"] = (*room).GetStream()
 	// log.Println(room, &room)

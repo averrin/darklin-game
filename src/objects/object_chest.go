@@ -6,13 +6,14 @@ import (
 	"items"
 )
 
+//Chest - lockable container
 type Chest struct {
 	Object
 	Locked bool
 	Key    string
 }
 
-//NewTable - constructor
+//NewChest - constructor
 func NewChest() Chest {
 	chest := new(Chest)
 	chest.Name = "Chest"
@@ -22,28 +23,30 @@ func NewChest() Chest {
 	return *chest
 }
 
+//Inspect - react on lookup
 func (a *Chest) Inspect() string {
 	if a.Locked {
 		return "Сундук заперт."
-	} else {
-		return fmt.Sprintf("%s", a.Items)
 	}
+	return fmt.Sprintf("%s", a.Items)
 }
 
+//Lock -
 func (a *Chest) Lock(key string) {
 	a.Key = key
 	a.Locked = true
 }
 
+//Unlock -
 func (a *Chest) Unlock() {
 	a.Locked = false
 }
 
+//Use - use item on object
 func (a *Chest) Use(item actor.ItemInterface) interface{} {
 	if item.GetName() != a.Key {
 		return "И ничего не произошло."
-	} else {
-		a.Unlock()
-		return "Сундук открылся"
 	}
+	a.Unlock()
+	return "Сундук открылся"
 }

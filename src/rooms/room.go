@@ -226,5 +226,5 @@ func (a *Room) GetItem(name string) (actor.ItemInterface, bool) {
 }
 
 func (a *Room) Inspect() string {
-	return a.Desc
+	return fmt.Sprintf("%v\n%v", a.Desc, a.Items)
 }
