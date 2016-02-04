@@ -2,6 +2,6 @@ bin
 pkg
 src/*.*
 .tags*
-core
+./core
 client/src
 client/darklin-client

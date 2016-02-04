@@ -35,6 +35,7 @@ func InitHandlers() {
 		commands.Describe: DescribeHandler,
 		commands.Drop:     DropHandler,
 		commands.Select:   SelectHandler,
+		commands.Use:      UseHandler,
 	}
 }
 
@@ -222,4 +223,8 @@ func (a *Room) RemoveItem(name string) {
 //GetItem -
 func (a *Room) GetItem(name string) (actor.ItemInterface, bool) {
 	return a.Items.GetItem(name)
+}
+
+func (a *Room) Inspect() string {
+	return a.Desc
 }

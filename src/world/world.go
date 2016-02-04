@@ -43,6 +43,10 @@ func (w *World) Init() {
 	key.Name = "Key"
 	key.Desc = "Огромный старый ключ."
 	w.Items.AddItem("Key", key)
+	sword := new(items.Item)
+	sword.Name = "Sword"
+	sword.Desc = "Меч. Прям как настоящий."
+	w.Items.AddItem("Sword", sword)
 
 	gs := *w.Global
 	hall := rooms.NewHall(gs)

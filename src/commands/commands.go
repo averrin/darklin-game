@@ -1,9 +1,12 @@
 package commands
 
+// Command type
 type Command string
 
+// Commands list
 var Commands []Command
 
+// NewCommand - constructor
 func NewCommand(s string) Command {
 	c := Command(s)
 	Commands = append(Commands, c)
@@ -26,6 +29,7 @@ var (
 	Unselect = NewCommand("unselect")
 	Describe = NewCommand("describe")
 	Light    = NewCommand("light")
+	Use      = NewCommand("use")
 )
 
 func GetCommands() map[Command][]string {

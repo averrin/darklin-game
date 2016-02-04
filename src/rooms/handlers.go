@@ -20,9 +20,9 @@ func PickHandler(a *Room, event *events.Event, tokens []string) {
 			}
 		} else {
 			obj := p.GetSelected()
-			switch obj.(type) {
+			switch (*obj).(type) {
 			case actor.ObjectInterface:
-				sel := obj.(actor.ObjectInterface)
+				sel := (*obj).(actor.ObjectInterface)
 				item, ok := sel.GetItem(tokens[1])
 				if ok {
 					sel.RemoveItem(tokens[1])
@@ -55,15 +55,17 @@ func LookupHandler(a *Room, event *events.Event, tokens []string) {
 	if a.State.Light {
 		p := *a.GetPlayer(event.Sender)
 		if p.GetSelected() == nil {
-			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
-			a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Объекты: \n%v", a.Objects))
-			go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
+			a.SendEvent(event.Sender, events.DESCRIBE, a.Inspect())
+			// a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", a.Items))
+			// a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Объекты: \n%v", a.Objects))
+			// go a.SendCompleterListItems(event.Sender, "pick", a.Items.GetItems())
 		} else {
 			obj := p.GetSelected()
-			switch obj.(type) {
+			switch (*obj).(type) {
 			case actor.ObjectInterface:
-				o := obj.(actor.ObjectInterface)
-				a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", o.GetItems()))
+				o := (*obj).(actor.ObjectInterface)
+				a.SendEvent(event.Sender, events.DESCRIBE, o.Inspect())
+				// a.SendEvent(event.Sender, events.DESCRIBE, fmt.Sprintf("Предметы: \n%v", o.GetItems()))
 			}
 		}
 	} else {
@@ -99,7 +101,7 @@ func DescribeHandler(a *Room, event *events.Event, tokens []string) {
 	if p.GetSelected() == nil {
 		a.SendEvent(event.Sender, events.DESCRIBE, a.Desc)
 	} else {
-		a.SendEvent(event.Sender, events.DESCRIBE, p.GetSelected().GetDesc())
+		a.SendEvent(event.Sender, events.DESCRIBE, (*p.GetSelected()).GetDesc())
 	}
 }
 
@@ -121,6 +123,26 @@ func SelectHandler(a *Room, event *events.Event, tokens []string) {
 	object, ok := a.Objects[tokens[1]]
 	p := *a.GetPlayer(event.Sender)
 	if ok {
-		p.SetSelected(object)
+		obj := object.(actor.SelectableInterface)
+		p.SetSelected(&obj)
+	}
+}
+
+func UseHandler(a *Room, event *events.Event, tokens []string) {
+	if len(tokens) == 2 {
+		p := *a.GetPlayer(event.Sender)
+		item, ok := p.GetItem(tokens[1])
+		if ok {
+			obj := *p.GetSelected()
+			if obj == nil {
+				go a.SendEvent(event.Sender, events.DESCRIBE, item.Use(item))
+			} else {
+				switch obj.(type) {
+				case actor.UsableInterface:
+					o := obj.(actor.UsableInterface)
+					a.SendEvent(event.Sender, events.DESCRIBE, o.Use(item))
+				}
+			}
+		}
 	}
 }

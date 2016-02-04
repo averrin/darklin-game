@@ -110,3 +110,7 @@ func (a *NPC) SetRoom(room actor.RoomInterface) {
 func (a *NPC) GetDesc() string {
 	return a.Desc
 }
+
+func (a *NPC) Inspect() string {
+	return a.Desc
+}

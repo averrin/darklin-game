@@ -165,10 +165,15 @@ func main() {
 				rl.Refresh()
 			case events.INTERNALINFO:
 				// ii := event.Payload.(actor.InternalInfo)
-				ii := event.Payload.(map[interface{}]interface{})
-				// log.Println(fmt.Sprintf("%s", ii))
-				if string(ii["Type"].([]byte)) == "autocomplete" {
-					ReBuildCompleter(completer, string(ii["Key"].([]byte)), ii["Args"].([]interface{}))
+				if event.Payload != nil {
+					ii := event.Payload.(map[interface{}]interface{})
+					// log.Println(fmt.Sprintf("%s", ii))
+					if string(ii["Type"].([]byte)) == "autocomplete" {
+						args := ii["Args"]
+						if args != nil {
+							ReBuildCompleter(completer, string(ii["Key"].([]byte)), args.([]interface{}))
+						}
+					}
 				}
 			case events.ROOMENTER:
 				sep := yellow("| ")

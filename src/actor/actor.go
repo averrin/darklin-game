@@ -14,8 +14,6 @@ var (
 	expEventsProcessed = expvar.NewInt("events_processed")
 )
 
-// "fmt"
-
 // Subscription on events
 type Subscription struct {
 	Type       events.EventType
@@ -241,18 +239,20 @@ func Index(slice []string, value string) int {
 	return -1
 }
 
+//SendCompleterList to client
 func (a *Actor) SendCompleterList(reciever string, key string, items []string) {
 	a.SendEvent(reciever, events.INTERNALINFO, NewCompleterItems(key, items))
 }
 
 func (a *Actor) SendCompleterListItems(reciever string, key string, items map[string]ItemInterface) {
-	names := make([]string, 0)
+	var names []string
 	for i := range items {
 		names = append(names, i)
 	}
 	a.SendEvent(reciever, events.INTERNALINFO, NewCompleterItems(key, names))
 }
 
+//InternalInfo - struct for internal ui notification
 type InternalInfo struct {
 	Type string
 	Key  string

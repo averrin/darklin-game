@@ -4,6 +4,7 @@ import (
 	"actor"
 	"events"
 	"npc"
+	"objects"
 )
 
 //NewHall - constructor
@@ -25,9 +26,14 @@ func (a *Room) HallInit() {
 	gs := *world.GetGlobal()
 	mik := npc.NewMik(gs)
 	// log.Println(mik.State.New)
+	t := objects.NewChest()
+	a.Objects["Chest"] = &t
 	if mik.State.New {
 		a.AddNPC(mik)
 	}
+	item, _ := a.World.GetItem("Sword")
+	t.AddItem(item)
+	t.Lock("Key")
 	go mik.Live()
 }
 

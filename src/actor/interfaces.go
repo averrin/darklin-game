@@ -52,14 +52,13 @@ type RoomInterface interface {
 	BroadcastRoom(events.EventType, interface{}, string)
 	GetStream() *chan *events.Event
 	GetState() AreaState
-	GetName() string
-	GetDesc() string
 	RemoveNPC(string)
 	AddNPC(NPCInterface)
 	AddPlayer(PlayerInterface)
 	RemovePlayer(PlayerInterface)
 	SendEventWithSender(string, events.EventType, interface{}, string)
 	GetPendingEvent(string) (*events.Event, bool)
+	SelectableInterface
 }
 
 //PlayerInterface -
@@ -78,8 +77,8 @@ type PlayerInterface interface {
 	RemoveItem(string)
 	GetItem(string) (ItemInterface, bool)
 	GetItems() map[string]ItemInterface
-	SetSelected(SelectableInterface)
-	GetSelected() SelectableInterface
+	SetSelected(*SelectableInterface)
+	GetSelected() *SelectableInterface
 }
 
 //NPCInterface -
@@ -95,8 +94,8 @@ type NPCInterface interface {
 
 //ItemInterface -
 type ItemInterface interface {
-	GetName() string
-	GetDesc() string
+	UsableInterface
+	SelectableInterface
 }
 
 //ItemContainerInterface -
@@ -115,12 +114,18 @@ type ObjectInterface interface {
 	AddItem(ItemInterface)
 	RemoveItem(string)
 	SelectableInterface
+	UsableInterface
 }
 
 //SelectableInterface -
 type SelectableInterface interface {
 	GetName() string
 	GetDesc() string
+	Inspect() string
 	// Select()
 	// Unselect()
+}
+
+type UsableInterface interface {
+	Use(ItemInterface) interface{}
 }

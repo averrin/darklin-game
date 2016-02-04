@@ -54,3 +54,11 @@ func (a *Object) GetItem(name string) (actor.ItemInterface, bool) {
 func (a *Object) GetItems() map[string]actor.ItemInterface {
 	return a.Items.GetItems()
 }
+
+func (a *Object) Inspect() string {
+	return a.Desc
+}
+
+func (a *Object) Use(item actor.ItemInterface) interface{} {
+	return "И ничего не произошло."
+}
