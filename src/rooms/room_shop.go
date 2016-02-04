@@ -8,7 +8,6 @@ import (
 //ShopInit - room init
 func (a *Room) ShopInit() {
 	t := objects.NewTable()
-	t.Desc += " На нем лежит ключ [Key]."
 	a.Objects["Table"] = &t
 	if a.State.New {
 		item, _ := a.World.GetItem("Key")

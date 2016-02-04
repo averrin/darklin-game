@@ -36,8 +36,9 @@ type AreaState struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`
 	Name string
 
-	Light bool
-	Items []string
+	Light   bool
+	Items   []string
+	Objects map[string]interface{}
 
 	New bool
 }

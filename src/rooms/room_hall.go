@@ -27,13 +27,14 @@ func (a *Room) HallInit() {
 	mik := npc.NewMik(gs)
 	// log.Println(mik.State.New)
 	t := objects.NewChest()
-	a.Objects["Chest"] = &t
+	a.AddObject("Chest", &t)
 	if mik.State.New {
 		a.AddNPC(mik)
 	}
 	item, _ := a.World.GetItem("Sword")
 	t.AddItem(item)
 	t.Lock("Key")
+	go a.UpdateState()
 	go mik.Live()
 }
 

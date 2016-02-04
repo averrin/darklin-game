@@ -114,6 +114,7 @@ type ObjectInterface interface {
 	GetItem(string) (ItemInterface, bool)
 	AddItem(ItemInterface)
 	RemoveItem(string)
+	GetState() interface{}
 	SelectableInterface
 	UsableInterface
 }

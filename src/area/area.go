@@ -34,6 +34,7 @@ func NewArea(name string, gs actor.StreamInterface) Area {
 	area.State.New = true
 	area.State.Light = true
 	area.State.Name = area.Name
+	area.State.Objects = make(map[string]interface{})
 	if n != 0 {
 		db.C("rooms").Find(bson.M{"name": area.Name}).One(&area.State)
 		area.State.New = false

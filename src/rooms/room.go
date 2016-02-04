@@ -47,6 +47,7 @@ func NewRoom(name string, desc string, init func(*Room), rooms []string, gs acto
 	room.Actor.ProcessEvent = room.ProcessEvent
 	room.NPCs = make(map[string]*actor.NPCInterface)
 	room.Objects = make(map[string]actor.ObjectInterface)
+	room.State.Objects = make(map[string]interface{})
 	container := items.NewContainer()
 	room.Items = container
 	room.Desc = desc
@@ -239,4 +240,10 @@ func (a *Room) Inspect() string {
 
 	}
 	return r
+}
+
+func (a *Room) AddObject(key string, obj actor.ObjectInterface) {
+	a.Objects[key] = obj
+	log.Println(obj.GetState())
+	a.State.Objects[key] = obj.GetState()
 }

@@ -33,6 +33,7 @@ func PickHandler(a *Room, event *events.Event, tokens []string) {
 				}
 			}
 		}
+		go a.UpdateState()
 	}
 }
 
@@ -143,6 +144,7 @@ func UseHandler(a *Room, event *events.Event, tokens []string) {
 					a.SendEvent(event.Sender, events.DESCRIBE, o.Use(item))
 				}
 			}
+			go a.UpdateState()
 		}
 	}
 }

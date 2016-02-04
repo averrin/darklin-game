@@ -10,6 +10,11 @@ type Object struct {
 	Name  string
 	Desc  string
 	Items actor.ItemContainerInterface
+	State *ObjectState
+}
+
+type ObjectState struct {
+	Items []string
 }
 
 //GetName -
@@ -32,7 +37,7 @@ func (a *Object) AddItem(item actor.ItemInterface) {
 	// pos := actor.Index(a.State.Items, item.GetName())
 	a.Items.AddItem(item.GetName(), item)
 	// if pos == -1 {
-	// 	a.State.Items = append(a.State.Items, item.GetName())
+	a.State.Items = append(a.State.Items, item.GetName())
 	// 	a.UpdateState()
 	// }
 }
@@ -40,8 +45,8 @@ func (a *Object) AddItem(item actor.ItemInterface) {
 //RemoveItem -
 func (a *Object) RemoveItem(name string) {
 	a.Items.RemoveItem(name)
-	// pos := actor.Index(a.State.Items, name)
-	// a.State.Items = append(a.State.Items[:pos], a.State.Items[pos+1:]...)
+	pos := actor.Index(a.State.Items, name)
+	a.State.Items = append(a.State.Items[:pos], a.State.Items[pos+1:]...)
 	// a.UpdateState()
 }
 
@@ -56,9 +61,18 @@ func (a *Object) GetItems() map[string]actor.ItemInterface {
 }
 
 func (a *Object) Inspect() string {
-	return a.Desc
+	r := a.Desc
+	if a.Items.Count() > 0 {
+		r += "\nПредметы:"
+		r += a.Items.String()
+	}
+	return r
 }
 
 func (a *Object) Use(item actor.ItemInterface) interface{} {
 	return "И ничего не произошло."
+}
+
+func (a *Object) GetState() interface{} {
+	return a.State
 }
