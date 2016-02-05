@@ -244,7 +244,6 @@ func (a *Room) Inspect() string {
 
 func (a *Room) AddObject(key string, obj actor.ObjectInterface) {
 	a.Objects[key] = obj
-	log.Println(obj.GetState())
 	a.State.Objects[key] = obj.GetState()
 }
 

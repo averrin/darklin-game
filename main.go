@@ -15,7 +15,10 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+var VERSION string
+
 func main() {
+	log.Println("Core version: " + VERSION)
 	var err error
 	core.SESSION, err = mgo.Dial("mongo")
 	if err != nil {
