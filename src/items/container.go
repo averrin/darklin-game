@@ -3,7 +3,7 @@ package items
 import (
 	"actor"
 	"bytes"
-	"text/template"
+	"html/template"
 )
 
 //Container - items holder

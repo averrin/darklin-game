@@ -33,7 +33,7 @@ func (a *Room) HallInit() {
 	}
 	item, _ := a.World.GetItem("Sword")
 	t.AddItem(item)
-	t.Lock("Key")
+	t.Lock("Old key")
 	go a.UpdateState()
 	go mik.Live()
 }

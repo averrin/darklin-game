@@ -40,9 +40,9 @@ func (w *World) Init() {
 
 	rooms.InitHandlers()
 	key := new(items.Item)
-	key.Name = "Key"
+	key.Name = "Old key"
 	key.Desc = "Огромный старый ключ."
-	w.Items.AddItem("Key", key)
+	w.Items.AddItem("Old key", key)
 	sword := new(items.Item)
 	sword.Name = "Sword"
 	sword.Desc = "Меч. Прям как настоящий."

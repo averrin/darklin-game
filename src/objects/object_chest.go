@@ -13,6 +13,7 @@ type Chest struct {
 	State  *ChestState
 }
 
+//ChestState - chest state
 type ChestState struct {
 	Locked bool
 	Items  []string
@@ -81,6 +82,7 @@ func (a *Chest) GetItems() map[string]actor.ItemInterface {
 	return nil
 }
 
+//GetState - return state of chest
 func (a *Chest) GetState() interface{} {
 	return a.State
 }

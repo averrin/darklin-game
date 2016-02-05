@@ -247,3 +247,7 @@ func (a *Room) AddObject(key string, obj actor.ObjectInterface) {
 	log.Println(obj.GetState())
 	a.State.Objects[key] = obj.GetState()
 }
+
+func (a *Room) GetObjects() map[string]actor.ObjectInterface {
+	return a.Objects
+}

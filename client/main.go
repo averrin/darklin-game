@@ -82,8 +82,10 @@ func ReBuildCompleter(completer *readline.PrefixCompleter, key string, items []i
 	for cmd, children := range COMMANDS {
 		item := readline.PcItem(string(cmd))
 		if string(cmd) == key {
+			COMMANDS[cmd] = []string{}
 			for _, child := range items {
 				item.Children = append(item.Children, readline.PcItem(string(child.([]byte))))
+				COMMANDS[cmd] = append(COMMANDS[cmd], string(child.([]byte)))
 			}
 		} else {
 			for _, child := range children {
