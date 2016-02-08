@@ -1,0 +1,9 @@
+---
+  -
+    type: "base"
+    name: "Old key"
+    desc: "Огромный старый ключ."
+  -
+    type: "base"
+    name: "Sword"
+    desc: "Меч. Прям как настоящий."

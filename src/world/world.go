@@ -3,11 +3,15 @@ package world
 import (
 	"actor"
 	"events"
+	"io/ioutil"
 	"items"
 	"npc"
+	"path/filepath"
 	"rooms"
 	"time"
 	"timeStream"
+
+	"gopkg.in/yaml.v2"
 )
 
 //World - global container
@@ -39,14 +43,13 @@ func NewWorld(gs actor.StreamInterface) *World {
 func (w *World) Init() {
 
 	rooms.InitHandlers()
-	key := new(items.Item)
-	key.Name = "Old key"
-	key.Desc = "Огромный старый ключ."
-	w.Items.AddItem("Old key", key)
-	sword := new(items.Item)
-	sword.Name = "Sword"
-	sword.Desc = "Меч. Прям как настоящий."
-	w.Items.AddItem("Sword", sword)
+	allItems := ReadItems()
+	for _, itemDesc := range allItems {
+		item := new(items.Item)
+		item.Name = itemDesc.Name
+		item.Desc = itemDesc.Desc
+		w.Items.AddItem(item.Name, item)
+	}
 
 	gs := *w.Global
 	hall := rooms.NewHall(gs)
@@ -105,4 +108,28 @@ func (w *World) RemoveItem(name string) {
 //GetItem -
 func (w *World) GetItem(name string) (actor.ItemInterface, bool) {
 	return w.Items.GetItem(name)
+}
+
+type ItemDesc struct {
+	Type string `yaml:"type"`
+	Name string `yaml:"name"`
+	Desc string `yaml:"desc"`
+}
+
+func ReadItems() []ItemDesc {
+	filename, _ := filepath.Abs("src/items/items_db.yaml")
+	yamlFile, err := ioutil.ReadFile(filename)
+
+	if err != nil {
+		panic(err)
+	}
+
+	var allItems []ItemDesc
+
+	err = yaml.Unmarshal(yamlFile, &allItems)
+	if err != nil {
+		panic(err)
+	}
+
+	return allItems
 }
