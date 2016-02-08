@@ -22,7 +22,7 @@ type StreamInterface interface {
 	SetStream(string, *chan *events.Event)
 	GetDate() time.Time
 	Subscribe(events.EventType, *Actor)
-	GetPlayerHandler() func(http.ResponseWriter, *http.Request)
+	GetPlayerHandler(string) func(http.ResponseWriter, *http.Request)
 }
 
 //WorldInterface -

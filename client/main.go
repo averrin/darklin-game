@@ -53,7 +53,7 @@ func runInit(c *websocket.Conn) {
 }
 
 func connect(u url.URL) *websocket.Conn {
-	log.Printf("connecting to %s", u.String())
+	log.Printf("Подключение к %s...", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -145,7 +145,7 @@ func main() {
 				// log.Println("read:", err)
 				rl.SetPrompt(">> ")
 				rl.Refresh()
-				log.Println(red("Disconnected...") + " wait...")
+				log.Println(red("Отключено...") + " ждем...")
 				time.Sleep(500 * time.Millisecond)
 				conn = connect(u)
 				continue
@@ -210,6 +210,8 @@ func main() {
 				sep := red("! ")
 				print(sep+"%s", event.Payload)
 			case events.CONNECTED:
+				sep := green("| ")
+				print(sep+"Версия сервера: %s", event.Payload)
 				runInit(conn)
 			default:
 				sep := blue("> ")

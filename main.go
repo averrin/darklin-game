@@ -34,7 +34,7 @@ func main() {
 
 	gs.SetStream("time", (*world.GetTime()).GetStream())
 
-	http.HandleFunc("/ws", gs.GetPlayerHandler())
+	http.HandleFunc("/ws", gs.GetPlayerHandler(VERSION))
 
 	port := flag.Int("port", 80, "port for serving")
 	interactive := flag.Bool("interactive", false, "readline mode")

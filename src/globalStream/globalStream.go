@@ -170,7 +170,7 @@ func (a *GlobalStream) ProcessCommand(event *events.Event) {
 }
 
 // GetPlayerHandler - handle user input
-func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Request) {
+func (a *GlobalStream) GetPlayerHandler(version string) func(w http.ResponseWriter, r *http.Request) {
 	formatter := a.Formatter
 	red := formatter.Red
 
@@ -180,7 +180,7 @@ func (a *GlobalStream) GetPlayerHandler() func(w http.ResponseWriter, r *http.Re
 		p.SetStream("room", &a.Stream)
 		c, err := upgrader.Upgrade(w, r, nil)
 		p.SetConnection(c)
-		p.Message(events.NewEvent(events.CONNECTED, nil, "global"))
+		p.Message(events.NewEvent(events.CONNECTED, version, "global"))
 		p.Message(events.NewEvent(events.SYSTEMMESSAGE, "Подключено. Наберите: login <username> <password>", "global"))
 		a.Players[p] = c
 		if err != nil {

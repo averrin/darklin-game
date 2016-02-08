@@ -245,6 +245,7 @@ func (a *Actor) SendCompleterList(reciever string, key string, items []string) {
 	a.SendEvent(reciever, events.INTERNALINFO, NewCompleterItems(key, items))
 }
 
+//SendCompleterListItems - completer list from item container
 func (a *Actor) SendCompleterListItems(reciever string, key string, items map[string]ItemInterface) {
 	var names []string
 	for i := range items {
@@ -253,6 +254,7 @@ func (a *Actor) SendCompleterListItems(reciever string, key string, items map[st
 	a.SendEvent(reciever, events.INTERNALINFO, NewCompleterItems(key, names))
 }
 
+//SendCompleterListObjects -
 func (a *Actor) SendCompleterListObjects(reciever string, key string, items map[string]ObjectInterface) {
 	var names []string
 	for i := range items {
@@ -268,6 +270,7 @@ type InternalInfo struct {
 	Args interface{}
 }
 
+//NewCompleterItems - strixt for rebuild completer list
 func NewCompleterItems(key string, items []string) InternalInfo {
 	ii := new(InternalInfo)
 	ii.Type = "autocomplete"
