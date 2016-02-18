@@ -1,0 +1,13 @@
+package: .
+import:
+- package: github.com/fatih/color
+- package: github.com/gorilla/websocket
+- package: github.com/pborman/uuid
+- package: github.com/ugorji/go
+  subpackages:
+  - codec
+- package: gopkg.in/mgo.v2
+  subpackages:
+  - bson
+- package: gopkg.in/readline.v1
+- package: gopkg.in/yaml.v2
