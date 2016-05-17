@@ -19,8 +19,8 @@
 [submodule "vendor/gopkg.in/mgo"]
 	path = vendor/gopkg.in/mgo
 	url = git://gopkg.in/mgo.v2
-[submodule "vendor/gopkg.in/readline"]
-	path = vendor/gopkg.in/readline
+[submodule "vendor/github.com/chzyer/readline"]
+	path = vendor/github.com/chzyer/readline
 	url = git://gopkg.in/readline.v1
 [submodule "vendor/gopkg.in/yaml"]
 	path = vendor/gopkg.in/yaml
