@@ -18,10 +18,10 @@
 	url = git://github.com/ugorji/go
 [submodule "vendor/gopkg.in/mgo.v2"]
 	path = vendor/gopkg.in/mgo.v2
-	url = git://gopkg.in/mgo.v2
+	url = git://github.com/go-mgo/mgo
 [submodule "vendor/gopkg.in/readline.v1"]
 	path = vendor/gopkg.in/readline.v1
-	url = git://gopkg.in/readline.v1
+	url = git://github.com/chzyer/readline
 [submodule "vendor/gopkg.in/yaml.v2"]
 	path = vendor/gopkg.in/yaml.v2
-	url = git://gopkg.in/yaml.v2
+	url = git://github.com/go-yaml/yaml
