@@ -3,8 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"commands"
-	"events"
 	"flag"
 	"fmt"
 	"log"
@@ -15,6 +13,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	commands "../modules/commands"
+	events "../modules/events"
 
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"

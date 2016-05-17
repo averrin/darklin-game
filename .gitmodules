@@ -1,0 +1,27 @@
+[submodule "vendor/github.com/fatih/color"]
+	path = vendor/github.com/fatih/color
+	url = git://github.com/fatih/color
+[submodule "vendor/github.com/gorilla/websocket"]
+	path = vendor/github.com/gorilla/websocket
+	url = git://github.com/gorilla/websocket
+[submodule "vendor/github.com/mattn/go-colorable"]
+	path = vendor/github.com/mattn/go-colorable
+	url = git://github.com/mattn/go-colorable
+[submodule "vendor/github.com/mattn/go-isatty"]
+	path = vendor/github.com/mattn/go-isatty
+	url = git://github.com/mattn/go-isatty
+[submodule "vendor/github.com/pborman/uuid"]
+	path = vendor/github.com/pborman/uuid
+	url = git://github.com/pborman/uuid
+[submodule "vendor/github.com/ugorji/go"]
+	path = vendor/github.com/ugorji/go
+	url = git://github.com/ugorji/go
+[submodule "vendor/gopkg.in/mgo.v2"]
+	path = vendor/gopkg.in/mgo.v2
+	url = git://gopkg.in/mgo.v2
+[submodule "vendor/gopkg.in/readline.v1"]
+	path = vendor/gopkg.in/readline.v1
+	url = git://gopkg.in/readline.v1
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = git://gopkg.in/yaml.v2

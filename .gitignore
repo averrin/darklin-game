@@ -1,6 +1,5 @@
 bin
 pkg
-src/*.*
 .tags*
 ./core
 client/src

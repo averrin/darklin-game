@@ -1,16 +1,17 @@
 package main
 
 import (
-	"core"
 	"flag"
 	"fmt"
-	"globalStream"
 	"io/ioutil"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"player"
-	"world"
+
+	core "./modules/core"
+	globalStream "./modules/globalStream"
+	player "./modules/player"
+	world "./modules/world"
 
 	"gopkg.in/mgo.v2"
 )
