@@ -23,5 +23,5 @@
 	path = vendor/gopkg.in/readline.v1
 	url = git://gopkg.in/readline.v1
 [submodule "vendor/gopkg.in/yaml.v2"]
-	path = vendor/gopkg.in/yaml
+	path = vendor/gopkg.in/yaml.v2
 	url = git://gopkg.in/yaml.v2
